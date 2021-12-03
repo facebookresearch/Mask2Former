@@ -1,0 +1,11 @@
+_BASE_: maskformer2_R50_bs16_160k.yaml
+MODEL:
+  WEIGHTS: "R-101.pkl"
+  RESNETS:
+    DEPTH: 101
+    STEM_TYPE: "basic"  # not used
+    STEM_OUT_CHANNELS: 64
+    STRIDE_IN_1X1: False
+    OUT_FEATURES: ["res2", "res3", "res4", "res5"]
+    NORM: "SyncBN"
+    RES5_MULTI_GRID: [1, 1, 1]  # not used
