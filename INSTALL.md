@@ -12,9 +12,17 @@
 ### CUDA kernel for MSDeformAttn
 After preparing the required environment, run the following command to compile CUDA kernel for MSDeformAttn:
 
+`CUDA_HOME` must be defined and points to the directory of the installed CUDA toolkit.
+
 ```bash
 cd mask2former/modeling/pixel_decoder/ops
 sh make.sh
+```
+
+#### Building on another system
+To build on a system that does not have a GPU device but provide the drivers:
+```bash
+TORCH_CUDA_ARCH_LIST='8.0' FORCE_CUDA=1 python setup.py build install
 ```
 
 ### Example conda environment setup
