@@ -12,6 +12,9 @@
 * A single architecture for panoptic, instance and semantic segmentation.
 * Support major segmentation datasets: ADE20K, Cityscapes, COCO, Mapillary Vistas.
 
+## Updates
+* Video instance segmentation is now supported! Please check our [tech report](https://arxiv.org/) for more details.
+
 ## Installation
 
 See [installation instructions](INSTALL.md).
