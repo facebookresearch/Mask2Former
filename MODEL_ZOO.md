@@ -638,3 +638,130 @@ All models available for download through this document are licensed under the
 <td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/mask2former/mapillary_vistas/semantic/maskformer2_swin_large_IN21k_384_bs16_300k/model_final_90ee2d.pkl">model</a></td>
 </tr>
 </tbody></table>
+
+
+## Video Instance Segmentation
+### YouTubeVIS 2019
+
+<table><tbody>
+<!-- START TABLE -->
+<!-- TABLE HEADER -->
+<th valign="bottom">Name</th>
+<th valign="bottom">Backbone</th>
+<th valign="bottom">iterations</th>
+<th valign="bottom">AP</th>
+<th valign="bottom">model id</th>
+<th valign="bottom">download</th>
+<!-- TABLE BODY -->
+<!-- ROW: maskformer2_R50_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2019/video_maskformer2_R50_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">R50</td>
+<td align="center">6k</td>
+<td align="center">46.4</td>
+<td align="center">51130652_3</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2019/video_maskformer2_R50_bs16_8ep/model_final_34112b.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_R101_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2019/video_maskformer2_R101_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">R101</td>
+<td align="center">6k</td>
+<td align="center">49.2</td>
+<td align="center">50897581_1</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2019/video_maskformer2_R101_bs16_8ep/model_final_a34dca.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_swin_tiny_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2019/swin/video_maskformer2_swin_tiny_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">Swin-T</td>
+<td align="center">6k</td>
+<td align="center">51.5</td>
+<td align="center">50897611_3</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2019/video_maskformer2_swin_tiny_bs16_8ep/model_final_26fffe.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_swin_small_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2019/swin/video_maskformer2_swin_small_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">Swin-S</td>
+<td align="center">6k</td>
+<td align="center">54.3</td>
+<td align="center">50897661_2</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2019/video_maskformer2_swin_small_bs16_8ep/model_final_4a5174.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_swin_base_IN21k_384_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2019/swin/video_maskformer2_swin_base_IN21k_384_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">Swin-B (IN21k)</td>
+<td align="center">6k</td>
+<td align="center">59.5</td>
+<td align="center">50897733_2</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2019/video_maskformer2_swin_base_IN21k_384_bs16_8ep/model_final_221a8a.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_swin_large_IN21k_384_bs16_100ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2019/swin/video_maskformer2_swin_large_IN21k_384_bs16_8ep.yaml">Mask2Former (200 queries)</a></td>
+<td align="center">Swin-L (IN21k)</td>
+<td align="center">6k</td>
+<td align="center">60.4</td>
+<td align="center">50908813_0</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2019/video_maskformer2_swin_large_IN21k_384_bs16_8ep/model_final_c5c739.pkl">model</a></td>
+</tr>
+</tbody></table>
+
+
+### YouTubeVIS 2021
+
+<table><tbody>
+<!-- START TABLE -->
+<!-- TABLE HEADER -->
+<th valign="bottom">Name</th>
+<th valign="bottom">Backbone</th>
+<th valign="bottom">iterations</th>
+<th valign="bottom">AP</th>
+<th valign="bottom">model id</th>
+<th valign="bottom">download</th>
+<!-- TABLE BODY -->
+<!-- ROW: maskformer2_R50_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2021/video_maskformer2_R50_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">R50</td>
+<td align="center">8k</td>
+<td align="center">40.6</td>
+<td align="center">51130652_7</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2021/video_maskformer2_R50_bs16_8ep/model_final_b8aae2.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_R101_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2021/video_maskformer2_R101_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">R101</td>
+<td align="center">8k</td>
+<td align="center">42.4</td>
+<td align="center">50897581_8</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2021/video_maskformer2_R101_bs16_8ep/model_final_6efd7a.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_swin_tiny_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2021/swin/video_maskformer2_swin_tiny_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">Swin-T</td>
+<td align="center">8k</td>
+<td align="center">45.9</td>
+<td align="center">50897611_7</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2021/video_maskformer2_swin_tiny_bs16_8ep/model_final_965185.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_swin_small_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2021/swin/video_maskformer2_swin_small_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">Swin-S</td>
+<td align="center">8k</td>
+<td align="center">48.6</td>
+<td align="center">50897661_7</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2021/video_maskformer2_swin_small_bs16_8ep/model_final_0dec91.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_swin_base_IN21k_384_bs16_50ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2021/swin/video_maskformer2_swin_base_IN21k_384_bs16_8ep.yaml">Mask2Former</a></td>
+<td align="center">Swin-B (IN21k)</td>
+<td align="center">8k</td>
+<td align="center">52.0</td>
+<td align="center">50897733_9</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2021/video_maskformer2_swin_base_IN21k_384_bs16_8ep/model_final_a9b925.pkl">model</a></td>
+</tr>
+<!-- ROW: maskformer2_swin_large_IN21k_384_bs16_100ep -->
+ <tr><td align="left"><a href="configs/youtubevis_2021/swin/video_maskformer2_swin_large_IN21k_384_bs16_8ep.yaml">Mask2Former (200 queries)</a></td>
+<td align="center">Swin-L (IN21k)</td>
+<td align="center">8k</td>
+<td align="center">52.6</td>
+<td align="center">50908813_6</td>
+<td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/video_mask2former/ytvis_2021/video_maskformer2_swin_large_IN21k_384_bs16_8ep/model_final_4da256.pkl">model</a></td>
+</tr>
+</tbody></table>

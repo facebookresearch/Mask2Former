@@ -58,3 +58,8 @@ python train_net.py \
   --eval-only MODEL.WEIGHTS /path/to/checkpoint_file
 ```
 For more options, see `python train_net.py -h`.
+
+
+### Video instance segmentation
+Please use `demo_video/demo.py` for video instance segmentation demo and `train_net_video.py` to train
+and evaluate video instance segmentation models.

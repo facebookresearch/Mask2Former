@@ -139,3 +139,24 @@ mapillary_vistas/
 No preprocessing is needed for Mapillary Vistas on semantic and panoptic segmentation.
 
 If you want to evaluate instance segmentation on Mapillary Vistas, run `python datasets/prepare_mapillary_vistas_ins_seg.py` to generate COCO-style instance annotations.
+
+
+## Expected dataset structure for [YouTubeVIS 2019](https://competitions.codalab.org/competitions/20128):
+
+```
+ytvis_2019/
+  {train,valid,test}.json
+  {train,valid,test}/
+    Annotations/
+    JPEGImages/
+```
+
+## Expected dataset structure for [YouTubeVIS 2021](https://competitions.codalab.org/competitions/28988):
+
+```
+ytvis_2021/
+  {train,valid,test}.json
+  {train,valid,test}/
+    Annotations/
+    JPEGImages/
+```
