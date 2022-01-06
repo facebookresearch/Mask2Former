@@ -524,7 +524,7 @@ All models available for download through this document are licensed under the
 </tr>
 <!-- ROW: maskformer2_swin_tiny_bs16_160k -->
  <tr><td align="left"><a href="configs/ade20k/semantic-segmentation/swin/maskformer2_swin_tiny_bs16_160k.yaml">Mask2Former</a></td>
-<td align="center">Swin-L</td>
+<td align="center">Swin-T</td>
 <td align="center">160k</td>
 <td align="center">47.7</td>
 <td align="center">49.6</td>
