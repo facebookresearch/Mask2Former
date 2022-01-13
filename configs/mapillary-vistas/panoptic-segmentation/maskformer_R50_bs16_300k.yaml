@@ -1,4 +1,4 @@
-_BASE_: Base-MapillaryVistas-SemanticSegmentation.yaml
+_BASE_: Base-MapillaryVistas-PanopticSegmentation.yaml
 MODEL:
   META_ARCHITECTURE: "MaskFormer"
   SEM_SEG_HEAD:
