@@ -89,6 +89,15 @@ def add_maskformer2_config(cfg):
     cfg.MODEL.SWIN.OUT_FEATURES = ["res2", "res3", "res4", "res5"]
     cfg.MODEL.SWIN.USE_CHECKPOINT = False
 
+    # convnext backbone
+    cfg.MODEL.CONVNEXT = CN()
+    cfg.MODEL.CONVNEXT.DEPTHS = [3, 3, 27, 3]
+    cfg.MODEL.CONVNEXT.DIMS = [192, 384, 768, 1536]
+    cfg.MODEL.CONVNEXT.DROP_PATH_RATE = 0.4
+    cfg.MODEL.CONVNEXT.LAYER_SCALE_INIT_VALUE = 1.0
+    cfg.MODEL.CONVNEXT.OUT_INDICES = [0, 1, 2, 3]
+    cfg.MODEL.CONVNEXT.OUT_FEATURES = ["res2", "res3", "res4", "res5"]
+
     # NOTE: maskformer2 extra configs
     # transformer module
     cfg.MODEL.MASK_FORMER.TRANSFORMER_DECODER_NAME = "MultiScaleMaskedTransformerDecoder"
