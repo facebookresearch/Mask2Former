@@ -137,7 +137,7 @@ All models available for download through this document are licensed under the
 <th valign="bottom">download</th>
 <!-- TABLE BODY -->
 <!-- ROW: maskformer2_R50_bs16_50ep -->
- <tr><td align="left"><a href="configs/coco/panoptic-segmentation/maskformer2_R50_bs16_50ep.yaml">Mask2Former</a></td>
+ <tr><td align="left"><a href="configs/coco/instance-segmentation/maskformer2_R50_bs16_50ep.yaml">Mask2Former</a></td>
 <td align="center">R50</td>
 <td align="center">50</td>
 <td align="center">43.7</td>
@@ -146,7 +146,7 @@ All models available for download through this document are licensed under the
 <td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/mask2former/coco/instance/maskformer2_R50_bs16_50ep/model_final_3c8ec9.pkl">model</a></td>
 </tr>
 <!-- ROW: maskformer2_R101_bs16_50ep -->
- <tr><td align="left"><a href="configs/coco/panoptic-segmentation/maskformer2_R101_bs16_50ep.yaml">Mask2Former</a></td>
+ <tr><td align="left"><a href="configs/coco/instance-segmentation/maskformer2_R101_bs16_50ep.yaml">Mask2Former</a></td>
 <td align="center">R101</td>
 <td align="center">50</td>
 <td align="center">44.2</td>
@@ -155,7 +155,7 @@ All models available for download through this document are licensed under the
 <td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/mask2former/coco/instance/maskformer2_R101_bs16_50ep/model_final_eba159.pkl">model</a></td>
 </tr>
 <!-- ROW: maskformer2_swin_tiny_bs16_50ep -->
- <tr><td align="left"><a href="configs/coco/panoptic-segmentation/swin/maskformer2_swin_tiny_bs16_50ep.yaml">Mask2Former</a></td>
+ <tr><td align="left"><a href="configs/coco/instance-segmentation/swin/maskformer2_swin_tiny_bs16_50ep.yaml">Mask2Former</a></td>
 <td align="center">Swin-T</td>
 <td align="center">50</td>
 <td align="center">45.0</td>
@@ -164,7 +164,7 @@ All models available for download through this document are licensed under the
 <td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/mask2former/coco/instance/maskformer2_swin_tiny_bs16_50ep/model_final_86143f.pkl">model</a></td>
 </tr>
 <!-- ROW: maskformer2_swin_small_bs16_50ep -->
- <tr><td align="left"><a href="configs/coco/panoptic-segmentation/swin/maskformer2_swin_small_bs16_50ep.yaml">Mask2Former</a></td>
+ <tr><td align="left"><a href="configs/coco/instance-segmentation/swin/maskformer2_swin_small_bs16_50ep.yaml">Mask2Former</a></td>
 <td align="center">Swin-S</td>
 <td align="center">50</td>
 <td align="center">46.3</td>
@@ -173,7 +173,7 @@ All models available for download through this document are licensed under the
 <td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/mask2former/coco/instance/maskformer2_swin_small_bs16_50ep/model_final_1e7f22.pkl">model</a></td>
 </tr>
 <!-- ROW: maskformer2_swin_base_384_bs16_50ep -->
- <tr><td align="left"><a href="configs/coco/panoptic-segmentation/swin/maskformer2_swin_base_384_bs16_50ep.yaml">Mask2Former</a></td>
+ <tr><td align="left"><a href="configs/coco/instance-segmentation/swin/maskformer2_swin_base_384_bs16_50ep.yaml">Mask2Former</a></td>
 <td align="center">Swin-B</td>
 <td align="center">50</td>
 <td align="center">46.7</td>
@@ -182,7 +182,7 @@ All models available for download through this document are licensed under the
 <td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/mask2former/coco/instance/maskformer2_swin_base_384_bs16_50ep/model_final_f6e0f6.pkl">model</a></td>
 </tr>
 <!-- ROW: maskformer2_swin_base_IN21k_384_bs16_50ep -->
- <tr><td align="left"><a href="configs/coco/panoptic-segmentation/swin/maskformer2_swin_base_IN21k_384_bs16_50ep.yaml">Mask2Former</a></td>
+ <tr><td align="left"><a href="configs/coco/instance-segmentation/swin/maskformer2_swin_base_IN21k_384_bs16_50ep.yaml">Mask2Former</a></td>
 <td align="center">Swin-B (IN21k)</td>
 <td align="center">50</td>
 <td align="center">48.1</td>
@@ -191,7 +191,7 @@ All models available for download through this document are licensed under the
 <td align="center"><a href="https://dl.fbaipublicfiles.com/maskformer/mask2former/coco/instance/maskformer2_swin_base_IN21k_384_bs16_50ep/model_final_83d103.pkl">model</a></td>
 </tr>
 <!-- ROW: maskformer2_swin_large_IN21k_384_bs16_100ep -->
- <tr><td align="left"><a href="configs/coco/panoptic-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml">Mask2Former (200 queries)</a></td>
+ <tr><td align="left"><a href="configs/coco/instance-segmentation/swin/maskformer2_swin_large_IN21k_384_bs16_100ep.yaml">Mask2Former (200 queries)</a></td>
 <td align="center">Swin-L (IN21k)</td>
 <td align="center">100</td>
 <td align="center">50.1</td>
