@@ -4,6 +4,14 @@ MaskFormer Training Script.
 
 This script is a simplified version of the training script in detectron2/tools.
 """
+try:
+    # ignore ShapelyDeprecationWarning from fvcore
+    from shapely.errors import ShapelyDeprecationWarning
+    import warnings
+    warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
+except:
+    pass
+
 import copy
 import itertools
 import logging
