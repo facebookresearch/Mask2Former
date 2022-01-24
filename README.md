@@ -13,6 +13,7 @@
 * Support major segmentation datasets: ADE20K, Cityscapes, COCO, Mapillary Vistas.
 
 ## Updates
+* Add Google Colab demo.
 * Video instance segmentation is now supported! Please check our [tech report](https://arxiv.org/abs/2112.10764) for more details.
 
 ## Installation
@@ -24,6 +25,8 @@ See [installation instructions](INSTALL.md).
 See [Preparing Datasets for Mask2Former](datasets/README.md).
 
 See [Getting Started with Mask2Former](GETTING_STARTED.md).
+
+Run our demo using Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1uIWE5KbGFSjrxey2aRd5pWkKNY1_SaNq)
 
 ## Advanced usage
 
