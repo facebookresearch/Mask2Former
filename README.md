@@ -28,6 +28,8 @@ See [Getting Started with Mask2Former](GETTING_STARTED.md).
 
 Run our demo using Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1uIWE5KbGFSjrxey2aRd5pWkKNY1_SaNq)
 
+Replicate web demo and docker image is available here: [![Replicate](https://replicate.com/facebookresearch/mask2former/badge)](https://replicate.com/facebookresearch/mask2former)
+
 ## Advanced usage
 
 See [Advanced Usage of Mask2Former](ADVANCED_USAGE.md).
