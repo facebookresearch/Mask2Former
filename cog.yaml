@@ -1,0 +1,28 @@
+build:
+  gpu: true
+  cuda: "10.1"
+  python_version: "3.8"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+  python_packages:
+    - "ipython==7.30.1"
+    - "numpy==1.21.4"
+    - "torch==1.8.1"
+    - "torchvision==0.9.1"
+    - "opencv-python==4.5.5.62"
+    - "Shapely==1.8.0"
+    - "h5py==3.6.0"
+    - "scipy==1.7.3"
+    - "submitit==1.4.1"
+    - "scikit-image==0.19.1"
+    - "Cython==0.29.27"
+    - "timm==0.4.12"
+  run:
+    - pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu101/torch1.8/index.html
+    - pip install git+https://github.com/cocodataset/panopticapi.git
+    - pip install git+https://github.com/mcordts/cityscapesScripts.git
+    - git clone https://github.com/facebookresearch/Mask2Former
+    - TORCH_CUDA_ARCH_LIST='7.5' FORCE_CUDA=1 python Mask2Former/mask2former/modeling/pixel_decoder/ops/setup.py build install
+
+predict: "predict.py:Predictor"
