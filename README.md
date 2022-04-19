@@ -1,4 +1,4 @@
-# Mask2Former: Masked-attention Mask Transformer for Universal Image Segmentation
+# Mask2Former: Masked-attention Mask Transformer for Universal Image Segmentation (CVPR 2022)
 
 [Bowen Cheng](https://bowenc0221.github.io/), [Ishan Misra](https://imisra.github.io/), [Alexander G. Schwing](https://alexander-schwing.de/), [Alexander Kirillov](https://alexander-kirillov.github.io/), [Rohit Girdhar](https://rohitgirdhar.github.io/)
 
@@ -61,11 +61,11 @@ However portions of the project are available under separate license terms: Swin
 If you use Mask2Former in your research or wish to refer to the baseline results published in the [Model Zoo](MODEL_ZOO.md), please use the following BibTeX entry.
 
 ```BibTeX
-@article{cheng2021mask2former,
+@inproceedings{cheng2021mask2former,
   title={Masked-attention Mask Transformer for Universal Image Segmentation},
   author={Bowen Cheng and Ishan Misra and Alexander G. Schwing and Alexander Kirillov and Rohit Girdhar},
-  journal={arXiv},
-  year={2021}
+  journal={CVPR},
+  year={2022}
 }
 ```
 
