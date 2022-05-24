@@ -145,8 +145,8 @@ if __name__ == "__main__":
                     out_filename = os.path.join(args.output, os.path.basename(path))
                     _vis_output.save(out_filename)
 
-            H, W = visualized_output[0].height, visualized_output[0].width
-
+            H, W = visualized_output[0].height * int(visualized_output[0].scale), visualized_output[0].width * int(visualized_output[0].scale) 
+            
             cap = cv2.VideoCapture(-1)
             fourcc = cv2.VideoWriter_fourcc(*"mp4v")
             out = cv2.VideoWriter(os.path.join(args.output, "visualization.mp4"), fourcc, 10.0, (W, H), True)
