@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from scipy.optimize import linear_sum_assignment
 from torch import nn
 from torch.cuda.amp import autocast
-
+import numpy as np
 from detectron2.projects.point_rend.point_features import point_sample
 
 
@@ -92,6 +92,28 @@ class HungarianMatcher(nn.Module):
 
         self.num_points = num_points
 
+    def linear_sum_assignment_with_inf(self, cost_matrix):
+        cost_matrix = np.asarray(cost_matrix)
+        min_inf = np.isneginf(cost_matrix).any()
+        max_inf = np.isposinf(cost_matrix).any()
+        if min_inf and max_inf:
+            raise ValueError("matrix contains both inf and -inf")
+
+        if min_inf or max_inf:
+            values = cost_matrix[~np.isinf(cost_matrix)]
+            min_values = values.min()
+            max_values = values.max()
+            m = min(cost_matrix.shape)
+
+            positive = m * (max_values - min_values + np.abs(max_values) + np.abs(min_values) + 1)
+            if max_inf:
+                place_holder = (max_values + (m - 1) * (max_values - min_values)) + positive
+            elif min_inf:
+                place_holder = (min_values + (m - 1) * (min_values - max_values)) - positive
+
+            cost_matrix[np.isinf(cost_matrix)] = place_holder
+        return linear_sum_assignment(cost_matrix)
+
     @torch.no_grad()
     def memory_efficient_forward(self, outputs, targets):
         """More memory-friendly matching"""
@@ -148,7 +170,7 @@ class HungarianMatcher(nn.Module):
             )
             C = C.reshape(num_queries, -1).cpu()
 
-            indices.append(linear_sum_assignment(C))
+            indices.append(self.linear_sum_assignment_with_inf(C))
 
         return [
             (torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64))
