@@ -35,6 +35,7 @@ class VisualizationDemo(object):
             self.predictor = AsyncPredictor(cfg, num_gpus=num_gpu)
         else:
             self.predictor = DefaultPredictor(cfg)
+        self.confidence_threshold = cfg.confidence_threshold
 
     def run_on_image(self, image):
         """
@@ -61,7 +62,7 @@ class VisualizationDemo(object):
                     predictions["sem_seg"].argmax(dim=0).to(self.cpu_device)
                 )
             if "instances" in predictions:
-                instances = predictions["instances"].to(self.cpu_device)
+                instances = predictions["instances"][predictions["instances"].score >= self.confidence_threshold].to(self.cpu_device)
                 vis_output = visualizer.draw_instance_predictions(predictions=instances)
 
         return predictions, vis_output
