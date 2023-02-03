@@ -20,6 +20,7 @@
 #include <ATen/cuda/CUDAContext.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <c10/cuda/CUDAGuard.h>
 
 
 at::Tensor ms_deform_attn_cuda_forward(
@@ -55,6 +56,8 @@ at::Tensor ms_deform_attn_cuda_forward(
     const int im2col_step_ = std::min(batch, im2col_step);
 
     AT_ASSERTM(batch % im2col_step_ == 0, "batch(%d) must divide im2col_step(%d)", batch, im2col_step_);
+
+    const at::cuda::OptionalCUDAGuard device_guard(device_of(value));
     
     auto output = at::zeros({batch, num_query, num_heads, channels}, value.options());
 
@@ -63,6 +66,7 @@ at::Tensor ms_deform_attn_cuda_forward(
     auto per_value_size = spatial_size * num_heads * channels;
     auto per_sample_loc_size = num_query * num_heads * num_levels * num_point * 2;
     auto per_attn_weight_size = num_query * num_heads * num_levels * num_point;
+
     for (int n = 0; n < batch/im2col_step_; ++n)
     {
         auto columns = output_n.select(0, n);
@@ -122,6 +126,8 @@ std::vector<at::Tensor> ms_deform_attn_cuda_backward(
     const int im2col_step_ = std::min(batch, im2col_step);
 
     AT_ASSERTM(batch % im2col_step_ == 0, "batch(%d) must divide im2col_step(%d)", batch, im2col_step_);
+
+    const at::cuda::OptionalCUDAGuard device_guard(device_of(value));
 
     auto grad_value = at::zeros_like(value);
     auto grad_sampling_loc = at::zeros_like(sampling_loc);
