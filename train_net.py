@@ -4,11 +4,16 @@ MaskFormer Training Script.
 
 This script is a simplified version of the training script in detectron2/tools.
 """
+import time
+
+from detectron2.utils.events import WandbWriter
+
 try:
     # ignore ShapelyDeprecationWarning from fvcore
     from shapely.errors import ShapelyDeprecationWarning
     import warnings
-    warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
+
+    warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 except:
     pass
 
@@ -41,6 +46,7 @@ from detectron2.evaluation import (
     LVISEvaluator,
     SemSegEvaluator,
     verify_results,
+    WandbVisualizer,
 )
 from detectron2.projects.deeplab import add_deeplab_config, build_lr_scheduler
 from detectron2.solver.build import maybe_add_gradient_clipping
@@ -64,6 +70,14 @@ class Trainer(DefaultTrainer):
     Extension of the Trainer class adapted to MaskFormer.
     """
 
+    # if you want to track expeirment metrics/configs/media
+    def build_writers(self):
+        print("=== using wandb")
+        time.sleep(2)
+        writers = super().build_writers()
+        writers.append(WandbWriter(config=self.cfg))
+        return writers
+
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
         """
@@ -76,6 +90,7 @@ class Trainer(DefaultTrainer):
         if output_folder is None:
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
         evaluator_list = []
+        evaluator_list.append(WandbVisualizer(dataset_name, size=5))
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
         # semantic segmentation
         if evaluator_type in ["sem_seg", "ade20k_panoptic_seg"]:
@@ -95,6 +110,7 @@ class Trainer(DefaultTrainer):
             "ade20k_panoptic_seg",
             "cityscapes_panoptic_seg",
             "mapillary_vistas_panoptic_seg",
+            "ril_panoptic",
         ]:
             if cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON:
                 evaluator_list.append(COCOPanopticEvaluator(dataset_name, output_folder))
@@ -138,9 +154,7 @@ class Trainer(DefaultTrainer):
             return LVISEvaluator(dataset_name, output_dir=output_folder)
         if len(evaluator_list) == 0:
             raise NotImplementedError(
-                "no Evaluator for the dataset {} with the type {}".format(
-                    dataset_name, evaluator_type
-                )
+                "no Evaluator for the dataset {} with the type {}".format(dataset_name, evaluator_type)
             )
         elif len(evaluator_list) == 1:
             return evaluator_list[0]
@@ -217,10 +231,7 @@ class Trainer(DefaultTrainer):
                 hyperparams = copy.copy(defaults)
                 if "backbone" in module_name:
                     hyperparams["lr"] = hyperparams["lr"] * cfg.SOLVER.BACKBONE_MULTIPLIER
-                if (
-                    "relative_position_bias_table" in module_param_name
-                    or "absolute_pos_embed" in module_param_name
-                ):
+                if "relative_position_bias_table" in module_param_name or "absolute_pos_embed" in module_param_name:
                     print(module_param_name)
                     hyperparams["weight_decay"] = 0.0
                 if isinstance(module, norm_module_types):
@@ -252,9 +263,7 @@ class Trainer(DefaultTrainer):
                 params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM
             )
         elif optimizer_type == "ADAMW":
-            optimizer = maybe_add_full_model_gradient_clipping(torch.optim.AdamW)(
-                params, cfg.SOLVER.BASE_LR
-            )
+            optimizer = maybe_add_full_model_gradient_clipping(torch.optim.AdamW)(params, cfg.SOLVER.BASE_LR)
         else:
             raise NotImplementedError(f"no optimizer type {optimizer_type}")
         if not cfg.SOLVER.CLIP_GRADIENTS.CLIP_TYPE == "full_model":
@@ -268,9 +277,7 @@ class Trainer(DefaultTrainer):
         logger.info("Running inference with test-time augmentation ...")
         model = SemanticSegmentorWithTTA(cfg, model)
         evaluators = [
-            cls.build_evaluator(
-                cfg, name, output_folder=os.path.join(cfg.OUTPUT_DIR, "inference_TTA")
-            )
+            cls.build_evaluator(cfg, name, output_folder=os.path.join(cfg.OUTPUT_DIR, "inference_TTA"))
             for name in cfg.DATASETS.TEST
         ]
         res = cls.test(cfg, model, evaluators)
@@ -300,9 +307,7 @@ def main(args):
 
     if args.eval_only:
         model = Trainer.build_model(cfg)
-        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
-            cfg.MODEL.WEIGHTS, resume=args.resume
-        )
+        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(cfg.MODEL.WEIGHTS, resume=args.resume)
         res = Trainer.test(cfg, model)
         if cfg.TEST.AUG.ENABLED:
             res.update(Trainer.test_with_TTA(cfg, model))

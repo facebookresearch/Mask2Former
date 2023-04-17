@@ -37,12 +37,12 @@ def build_transform_gen(cfg, is_train):
             )
         )
 
-    augmentation.extend([
-        T.ResizeScale(
-            min_scale=min_scale, max_scale=max_scale, target_height=image_size, target_width=image_size
-        ),
-        T.FixedSizeCrop(crop_size=(image_size, image_size)),
-    ])
+    augmentation.extend(
+        [
+            T.ResizeScale(min_scale=min_scale, max_scale=max_scale, target_height=image_size, target_width=image_size),
+            T.FixedSizeCrop(crop_size=(image_size, image_size)),
+        ]
+    )
 
     return augmentation
 
@@ -82,9 +82,7 @@ class COCOPanopticNewBaselineDatasetMapper:
         """
         self.tfm_gens = tfm_gens
         logging.getLogger(__name__).info(
-            "[COCOPanopticNewBaselineDatasetMapper] Full TransformGens used in training: {}".format(
-                str(self.tfm_gens)
-            )
+            "[COCOPanopticNewBaselineDatasetMapper] Full TransformGens used in training: {}".format(str(self.tfm_gens))
         )
 
         self.img_format = image_format
@@ -154,9 +152,7 @@ class COCOPanopticNewBaselineDatasetMapper:
                 instances.gt_masks = torch.zeros((0, pan_seg_gt.shape[-2], pan_seg_gt.shape[-1]))
                 instances.gt_boxes = Boxes(torch.zeros((0, 4)))
             else:
-                masks = BitMasks(
-                    torch.stack([torch.from_numpy(np.ascontiguousarray(x.copy())) for x in masks])
-                )
+                masks = BitMasks(torch.stack([torch.from_numpy(np.ascontiguousarray(x.copy())) for x in masks]))
                 instances.gt_masks = masks.tensor
                 instances.gt_boxes = masks.get_bounding_boxes()
 

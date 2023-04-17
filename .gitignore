@@ -51,3 +51,6 @@ _darcs
 /projects/*/datasets
 /models
 /snippet
+wandb
+.DS_Store
+test.log
