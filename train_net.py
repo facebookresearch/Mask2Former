@@ -52,6 +52,7 @@ from detectron2.projects.deeplab import add_deeplab_config, build_lr_scheduler
 from detectron2.solver.build import maybe_add_gradient_clipping
 from detectron2.utils.logger import setup_logger
 
+
 # MaskFormer
 from mask2former import (
     COCOInstanceNewBaselineDatasetMapper,
@@ -75,7 +76,7 @@ class Trainer(DefaultTrainer):
         print("=== using wandb")
         time.sleep(2)
         writers = super().build_writers()
-        writers.append(WandbWriter(config=self.cfg))
+        writers.append(WandbWriter(config=self.cfg, group=self.cfg.WANDB.GROUP, name=self.cfg.WANDB.NAME))
         return writers
 
     @classmethod

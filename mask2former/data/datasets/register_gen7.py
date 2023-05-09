@@ -11,13 +11,29 @@ from detectron2.data import DatasetCatalog, MetadataCatalog
 ## FULL DS
 PATH_IMAGES = os.path.expanduser("~/data/ril-digitaltwin/gen7/generatorv7")
 PATH_PANOPT = os.path.expanduser("~/data/ril-digitaltwin/gen7/generatorv7_panoptic")
-PATH_SEMSEG = PATH_PANOPT  # FIXME this is wrong but inconsequential
+# PATH_SEMSEG = PATH_PANOPT  # FIXME this is wrong but inconsequential
 DATA_JSON = os.path.join(PATH_PANOPT, "00000_dsinfo.json")
 
 DATASET_NAME = "rilv7"
+DATASET_NAME_TEST = "rilv7-test"
+TEST_SPLIT = 0.1  # 10 %
 
 data_json = json.load(open(DATA_JSON, "r"))
 categories = data_json["categories"]
+
+len_data = len(data_json["annotations"])
+len_test = int(len_data * TEST_SPLIT)
+len_train = len_data - len_test
+
+data_json_train = data_json.copy()
+data_json_train["annotations"] = data_json_train["annotations"][:len_train]
+data_json_train_path = os.path.join(PATH_PANOPT, "00000_dsinfo_train.json")
+json.dump(data_json_train, open(data_json_train_path, "w"))
+
+data_json_test = data_json.copy()
+data_json_test["annotations"] = data_json_test["annotations"][len_train:]
+data_json_test_path = os.path.join(PATH_PANOPT, "00000_dsinfo_test.json")
+json.dump(data_json_test, open(data_json_test_path, "w"))
 
 
 def convert_category_id(segment_info, meta):
@@ -36,11 +52,12 @@ def adjust_meta_for_vis(segment_info, meta):
     return segment_info
 
 
-def replace_paths(info, path_inputs, path_panoptic, path_semseg, metadata):
+def replace_paths(info, path_inputs, path_panoptic, metadata, start, end):
     out = []
-    for x in info["annotations"]:
+    for x in info["annotations"][start:end]:
         x["pan_seg_file_name"] = f"{path_panoptic}/{x['pan_seg_file_name']}"
-        del x["sem_seg_file_name"]
+        if "sem_seg_file_name" in x:
+            del x["sem_seg_file_name"]
         # x["sem_seg_file_name"] = f"{path_semseg}/{x['file_name']}"  # FIXME
         x["file_name"] = f"{path_inputs}/{x['file_name']}"
         x["segments_info"] = [convert_category_id(y, metadata) for y in x["segments_info"]]
@@ -77,23 +94,34 @@ def get_metadata():
 
 
 metadata = get_metadata()
-data = replace_paths(data_json, PATH_IMAGES, PATH_PANOPT, PATH_SEMSEG, metadata)
+data_train = replace_paths(data_json, PATH_IMAGES, PATH_PANOPT, metadata, 0, len_train)
+data_test = replace_paths(data_json, PATH_IMAGES, PATH_PANOPT, metadata, len_train, len_data)
 
 
-def get_data():  # this is stupid -.-'
-    return data
+def get_data_train():  # this is stupid -.-'
+    return data_train
 
 
-DatasetCatalog.register(DATASET_NAME, get_data)
-MetadataCatalog.get(DATASET_NAME).set(
-    panoptic_root=PATH_PANOPT,
-    image_root=PATH_IMAGES,
-    evaluator_type="ril_panoptic",
-    ignore_label=1,
-    label_divisor=1000,
-    panoptic_json=DATA_JSON,
-    **metadata,
-)
+def get_data_test():  # this is stupid -.-'
+    return data_test
+
+
+DatasetCatalog.register(DATASET_NAME, get_data_train)
+DatasetCatalog.register(DATASET_NAME_TEST, get_data_test)
+
+full_metadata = {
+    "panoptic_root": PATH_PANOPT,
+    "image_root": PATH_IMAGES,
+    "evaluator_type": "ril_panoptic",
+    "ignore_label": 1,
+    "label_divisor": 1000,
+    # "panoptic_json": DATA_JSON,
+}
+full_metadata.update(metadata)
+
+
+MetadataCatalog.get(DATASET_NAME).set(panoptic_json=data_json_train_path, **full_metadata)
+MetadataCatalog.get(DATASET_NAME_TEST).set(panoptic_json=data_json_test_path, **full_metadata)
 
 
 # TODO then add this to toolkit
@@ -105,7 +133,7 @@ MetadataCatalog.get(DATASET_NAME).set(
 if __name__ == "__main__":
     from pprint import pprint
 
-    data = get_data()
+    data = get_data_train()
     print(len(data))
     print(data[2])
     import random

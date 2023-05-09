@@ -4,6 +4,7 @@ import logging
 
 import numpy as np
 import torch
+from PIL import Image
 from torch.nn import functional as F
 
 from detectron2.config import configurable
@@ -95,6 +96,13 @@ class MaskFormerPanopticDatasetMapper(MaskFormerSemanticDatasetMapper):
         aug_input = T.AugInput(image, sem_seg=sem_seg_gt)
         aug_input, transforms = T.apply_transform_gens(self.tfm_gens, aug_input)
         image = aug_input.image
+
+        # print(type(image), image.shape)
+        # tmp = Image.fromarray(image)
+        # print(dataset_dict)
+        # tmp.save(f"{dataset_dict['image_id']}-transformed.jpeg")
+        # quit()
+
         if sem_seg_gt is not None:
             sem_seg_gt = aug_input.sem_seg
 
