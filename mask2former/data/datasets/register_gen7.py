@@ -3,15 +3,18 @@ import os.path
 
 from detectron2.data import DatasetCatalog, MetadataCatalog
 
-## MINI DS
-# PATH_IMAGES = os.path.expanduser("~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7")
-# PATH_PANOPT = os.path.expanduser("~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7_panoptic")
-# PATH_SEMSEG = os.path.expanduser("~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7_semseg")
+which_folder = 1
 
-## FULL DS
-PATH_IMAGES = os.path.expanduser("~/data/ril-digitaltwin/gen7/generatorv7")
-PATH_PANOPT = os.path.expanduser("~/data/ril-digitaltwin/gen7/generatorv7_panoptic")
-# PATH_SEMSEG = PATH_PANOPT  # FIXME this is wrong but inconsequential
+if which_folder == 0:
+    savedir_base_json = "~/dev/ril-digitaltwin/scripts/"
+    savedir_base_images = "~/dev/ril-digitaltwin/scripts/imgs/512/"
+elif which_folder == 1:
+    # savedir_base_json = "/mnt/home/projects/digitaltwin/data/generatorv7-small"
+    savedir_base_json = "/mnt/home/projects/digitaltwin/data2/gen7panoptic/gen7"
+    savedir_base_images = savedir_base_json
+
+PATH_IMAGES = os.path.expanduser(f"{savedir_base_images}/generatorv7")
+PATH_PANOPT = os.path.expanduser(f"{savedir_base_images}/generatorv7_panoptic")
 DATA_JSON = os.path.join(PATH_PANOPT, "00000_dsinfo.json")
 
 DATASET_NAME = "rilv7"
@@ -38,16 +41,23 @@ json.dump(data_json_test, open(data_json_test_path, "w"))
 
 def convert_category_id(segment_info, meta):
     if segment_info["category_id"] in meta["thing_dataset_id_to_contiguous_id"]:
-        segment_info["category_id"] = meta["thing_dataset_id_to_contiguous_id"][segment_info["category_id"]]
+        segment_info["category_id"] = meta["thing_dataset_id_to_contiguous_id"][
+            segment_info["category_id"]
+        ]
         segment_info["isthing"] = True
     else:
-        segment_info["category_id"] = meta["stuff_dataset_id_to_contiguous_id"][segment_info["category_id"]]
+        segment_info["category_id"] = meta["stuff_dataset_id_to_contiguous_id"][
+            segment_info["category_id"]
+        ]
         segment_info["isthing"] = False
     return segment_info
 
 
 def adjust_meta_for_vis(segment_info, meta):
-    if segment_info["category_id"] in meta["thing_dataset_id_to_contiguous_id"].values():
+    if (
+        segment_info["category_id"]
+        in meta["thing_dataset_id_to_contiguous_id"].values()
+    ):
         segment_info["category_id"] += 1
     return segment_info
 
@@ -60,7 +70,9 @@ def replace_paths(info, path_inputs, path_panoptic, metadata, start, end):
             del x["sem_seg_file_name"]
         # x["sem_seg_file_name"] = f"{path_semseg}/{x['file_name']}"  # FIXME
         x["file_name"] = f"{path_inputs}/{x['file_name']}"
-        x["segments_info"] = [convert_category_id(y, metadata) for y in x["segments_info"]]
+        x["segments_info"] = [
+            convert_category_id(y, metadata) for y in x["segments_info"]
+        ]
         out.append(x)
     return out
 
@@ -95,7 +107,9 @@ def get_metadata():
 
 metadata = get_metadata()
 data_train = replace_paths(data_json, PATH_IMAGES, PATH_PANOPT, metadata, 0, len_train)
-data_test = replace_paths(data_json, PATH_IMAGES, PATH_PANOPT, metadata, len_train, len_data)
+data_test = replace_paths(
+    data_json, PATH_IMAGES, PATH_PANOPT, metadata, len_train, len_data
+)
 
 
 def get_data_train():  # this is stupid -.-'
@@ -120,8 +134,12 @@ full_metadata = {
 full_metadata.update(metadata)
 
 
-MetadataCatalog.get(DATASET_NAME).set(panoptic_json=data_json_train_path, **full_metadata)
-MetadataCatalog.get(DATASET_NAME_TEST).set(panoptic_json=data_json_test_path, **full_metadata)
+MetadataCatalog.get(DATASET_NAME).set(
+    panoptic_json=data_json_train_path, **full_metadata
+)
+MetadataCatalog.get(DATASET_NAME_TEST).set(
+    panoptic_json=data_json_test_path, **full_metadata
+)
 
 
 # TODO then add this to toolkit

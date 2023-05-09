@@ -4,11 +4,12 @@ MaskFormer Training Script.
 
 This script is a simplified version of the training script in detectron2/tools.
 """
-import time
+import time, shutil, json
 
 try:
     from detectron2.utils.events import WandbWriter
     from detectron2.evaluation import WandbVisualizer
+
     use_wandb = True
 except Exception as e:
     print("== WARNING: not using WANDB for logging")
@@ -82,7 +83,13 @@ class Trainer(DefaultTrainer):
         time.sleep(2)
         writers = super().build_writers()
         if use_wandb:
-            writers.append(WandbWriter(config=self.cfg, group=self.cfg.WANDB.GROUP, name=self.cfg.WANDB.NAME))
+            writers.append(
+                WandbWriter(
+                    config=self.cfg,
+                    group=self.cfg.WANDB.GROUP,
+                    name=self.cfg.WANDB.NAME,
+                )
+            )
         return writers
 
     @classmethod
@@ -121,17 +128,41 @@ class Trainer(DefaultTrainer):
             "ril_panoptic",
         ]:
             if cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON:
-                evaluator_list.append(COCOPanopticEvaluator(dataset_name, output_folder))
+                evaluator_list.append(
+                    COCOPanopticEvaluator(dataset_name, output_folder)
+                )
         # COCO
-        if evaluator_type == "coco_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON:
+        if (
+            evaluator_type == "coco_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON
+        ):
             evaluator_list.append(COCOEvaluator(dataset_name, output_dir=output_folder))
-        if evaluator_type == "coco_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON:
-            evaluator_list.append(SemSegEvaluator(dataset_name, distributed=True, output_dir=output_folder))
+        if (
+            evaluator_type == "coco_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON
+        ):
+            evaluator_list.append(
+                SemSegEvaluator(
+                    dataset_name, distributed=True, output_dir=output_folder
+                )
+            )
         # Mapillary Vistas
-        if evaluator_type == "mapillary_vistas_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON:
-            evaluator_list.append(InstanceSegEvaluator(dataset_name, output_dir=output_folder))
-        if evaluator_type == "mapillary_vistas_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON:
-            evaluator_list.append(SemSegEvaluator(dataset_name, distributed=True, output_dir=output_folder))
+        if (
+            evaluator_type == "mapillary_vistas_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON
+        ):
+            evaluator_list.append(
+                InstanceSegEvaluator(dataset_name, output_dir=output_folder)
+            )
+        if (
+            evaluator_type == "mapillary_vistas_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON
+        ):
+            evaluator_list.append(
+                SemSegEvaluator(
+                    dataset_name, distributed=True, output_dir=output_folder
+                )
+            )
         # Cityscapes
         if evaluator_type == "cityscapes_instance":
             assert (
@@ -155,14 +186,21 @@ class Trainer(DefaultTrainer):
                 ), "CityscapesEvaluator currently do not work with multiple machines."
                 evaluator_list.append(CityscapesInstanceEvaluator(dataset_name))
         # ADE20K
-        if evaluator_type == "ade20k_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON:
-            evaluator_list.append(InstanceSegEvaluator(dataset_name, output_dir=output_folder))
+        if (
+            evaluator_type == "ade20k_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON
+        ):
+            evaluator_list.append(
+                InstanceSegEvaluator(dataset_name, output_dir=output_folder)
+            )
         # LVIS
         if evaluator_type == "lvis":
             return LVISEvaluator(dataset_name, output_dir=output_folder)
         if len(evaluator_list) == 0:
             raise NotImplementedError(
-                "no Evaluator for the dataset {} with the type {}".format(dataset_name, evaluator_type)
+                "no Evaluator for the dataset {} with the type {}".format(
+                    dataset_name, evaluator_type
+                )
             )
         elif len(evaluator_list) == 1:
             return evaluator_list[0]
@@ -238,8 +276,13 @@ class Trainer(DefaultTrainer):
 
                 hyperparams = copy.copy(defaults)
                 if "backbone" in module_name:
-                    hyperparams["lr"] = hyperparams["lr"] * cfg.SOLVER.BACKBONE_MULTIPLIER
-                if "relative_position_bias_table" in module_param_name or "absolute_pos_embed" in module_param_name:
+                    hyperparams["lr"] = (
+                        hyperparams["lr"] * cfg.SOLVER.BACKBONE_MULTIPLIER
+                    )
+                if (
+                    "relative_position_bias_table" in module_param_name
+                    or "absolute_pos_embed" in module_param_name
+                ):
                     print(module_param_name)
                     hyperparams["weight_decay"] = 0.0
                 if isinstance(module, norm_module_types):
@@ -259,7 +302,9 @@ class Trainer(DefaultTrainer):
 
             class FullModelGradientClippingOptimizer(optim):
                 def step(self, closure=None):
-                    all_params = itertools.chain(*[x["params"] for x in self.param_groups])
+                    all_params = itertools.chain(
+                        *[x["params"] for x in self.param_groups]
+                    )
                     torch.nn.utils.clip_grad_norm_(all_params, clip_norm_val)
                     super().step(closure=closure)
 
@@ -271,7 +316,9 @@ class Trainer(DefaultTrainer):
                 params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM
             )
         elif optimizer_type == "ADAMW":
-            optimizer = maybe_add_full_model_gradient_clipping(torch.optim.AdamW)(params, cfg.SOLVER.BASE_LR)
+            optimizer = maybe_add_full_model_gradient_clipping(torch.optim.AdamW)(
+                params, cfg.SOLVER.BASE_LR
+            )
         else:
             raise NotImplementedError(f"no optimizer type {optimizer_type}")
         if not cfg.SOLVER.CLIP_GRADIENTS.CLIP_TYPE == "full_model":
@@ -285,7 +332,9 @@ class Trainer(DefaultTrainer):
         logger.info("Running inference with test-time augmentation ...")
         model = SemanticSegmentorWithTTA(cfg, model)
         evaluators = [
-            cls.build_evaluator(cfg, name, output_folder=os.path.join(cfg.OUTPUT_DIR, "inference_TTA"))
+            cls.build_evaluator(
+                cfg, name, output_folder=os.path.join(cfg.OUTPUT_DIR, "inference_TTA")
+            )
             for name in cfg.DATASETS.TEST
         ]
         res = cls.test(cfg, model, evaluators)
@@ -306,16 +355,35 @@ def setup(args):
     cfg.freeze()
     default_setup(cfg, args)
     # Setup logger for "mask_former" module
-    setup_logger(output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="mask2former")
+    setup_logger(
+        output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="mask2former"
+    )
     return cfg
 
 
 def main(args):
     cfg = setup(args)
 
+    # output_folder should depend on config used
+    exp_dict = {"config": args.config_file}
+    cfg.defrost()
+
+
+    cfg.OUTPUT_DIR = f"output/{hash_dict(exp_dict)}"
+
+    # delete folder if exists
+    if os.path.exists(cfg.OUTPUT_DIR):
+        shutil.rmtree(cfg.OUTPUT_DIR)
+
+    os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
+    with open(cfg.OUTPUT_DIR + "/exp_dict.json", "w") as json_file:
+        json.dump(exp_dict, json_file, indent=4, sort_keys=True)
+
     if args.eval_only:
         model = Trainer.build_model(cfg)
-        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(cfg.MODEL.WEIGHTS, resume=args.resume)
+        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
+            cfg.MODEL.WEIGHTS, resume=args.resume
+        )
         res = Trainer.test(cfg, model)
         if cfg.TEST.AUG.ENABLED:
             res.update(Trainer.test_with_TTA(cfg, model))
@@ -326,6 +394,43 @@ def main(args):
     trainer = Trainer(cfg)
     trainer.resume_or_load(resume=args.resume)
     return trainer.train()
+
+
+def hash_dict(exp_dict):
+    import hashlib
+
+    dict2hash = ""
+    if not isinstance(exp_dict, dict):
+        raise ValueError("exp_dict is not a dict")
+
+    for k in sorted(exp_dict.keys()):
+        if "." in k:
+            raise ValueError(". has special purpose")
+        elif isinstance(exp_dict[k], dict):
+            v = hash_dict(exp_dict[k])
+        elif isinstance(exp_dict[k], tuple):
+            raise ValueError(
+                f"{exp_dict[k]} tuples can't be hashed yet, consider converting tuples to lists"
+            )
+        elif (
+            isinstance(exp_dict[k], list)
+            and len(exp_dict[k])
+            and isinstance(exp_dict[k][0], dict)
+        ):
+            v_str = ""
+            for e in exp_dict[k]:
+                if isinstance(e, dict):
+                    v_str += hash_dict(e)
+                else:
+                    raise ValueError("all have to be dicts")
+            v = v_str
+        else:
+            v = exp_dict[k]
+
+        dict2hash += str(k) + "/" + str(v)
+    hash_id = hashlib.md5(dict2hash.encode()).hexdigest()
+
+    return hash_id
 
 
 if __name__ == "__main__":
