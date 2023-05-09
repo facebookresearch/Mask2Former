@@ -1,10 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 from . import data  # register all new datasets
-try:
-    from . import modeling
-    from .maskformer_model import MaskFormer
-except ModuleNotFoundError as e:
-    print (e)
+
+# try:
+from . import modeling
+from .maskformer_model import MaskFormer
+
+# except ModuleNotFoundError as e:
+#     print (e)
 
 # config
 from .config import add_maskformer2_config

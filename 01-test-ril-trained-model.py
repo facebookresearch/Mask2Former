@@ -31,10 +31,13 @@ cfg = get_cfg()
 add_deeplab_config(cfg)
 add_maskformer2_config(cfg)
 cfg.merge_from_file("configs/ril/panoptic-segmentation/maskformer2_R50_bs16_50ep.yaml")
-cfg.MODEL.WEIGHTS = "output/model_final.pth"
+# cfg.MODEL.WEIGHTS = "output/model_final.pth"
+cfg.MODEL.WEIGHTS = "output/exp3-adding-noise-80kiter/model_final.pth"
 cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON = False
 cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON = False
 cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON = True
+if not torch.cuda.is_available():
+    cfg.MODEL.DEVICE = "cpu"
 predictor = DefaultPredictor(cfg)
 
 
