@@ -43,7 +43,7 @@ cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON = True
 cfg.MODEL.MASK_FORMER.TEST.OBJECT_MASK_THRESHOLD = 0.8
 cfg.MODEL.MASK_FORMER.TEST.OVERLAP_THRESHOLD = 0.8
 
-BATCH = False # for looking at a single image (and opening a plt window)
+BATCH = False  # for looking at a single image (and opening a plt window)
 # BATCH = True # for running this for 12 images (test/real) and writing the res to disk
 
 # ======== END PLAYGROUND

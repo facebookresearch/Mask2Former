@@ -6,7 +6,13 @@ This script is a simplified version of the training script in detectron2/tools.
 """
 import time
 
-from detectron2.utils.events import WandbWriter
+try:
+    from detectron2.utils.events import WandbWriter
+    from detectron2.evaluation import WandbVisualizer
+    use_wandb = True
+except Exception as e:
+    print("== WARNING: not using WANDB for logging")
+    use_wandb = False
 
 try:
     # ignore ShapelyDeprecationWarning from fvcore
@@ -46,7 +52,6 @@ from detectron2.evaluation import (
     LVISEvaluator,
     SemSegEvaluator,
     verify_results,
-    WandbVisualizer,
 )
 from detectron2.projects.deeplab import add_deeplab_config, build_lr_scheduler
 from detectron2.solver.build import maybe_add_gradient_clipping
@@ -76,7 +81,8 @@ class Trainer(DefaultTrainer):
         print("=== using wandb")
         time.sleep(2)
         writers = super().build_writers()
-        writers.append(WandbWriter(config=self.cfg, group=self.cfg.WANDB.GROUP, name=self.cfg.WANDB.NAME))
+        if use_wandb:
+            writers.append(WandbWriter(config=self.cfg, group=self.cfg.WANDB.GROUP, name=self.cfg.WANDB.NAME))
         return writers
 
     @classmethod
@@ -91,7 +97,8 @@ class Trainer(DefaultTrainer):
         if output_folder is None:
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
         evaluator_list = []
-        evaluator_list.append(WandbVisualizer(dataset_name, size=5))
+        if use_wandb:
+            evaluator_list.append(WandbVisualizer(dataset_name, size=5))
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
         # semantic segmentation
         if evaluator_type in ["sem_seg", "ade20k_panoptic_seg"]:
