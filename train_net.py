@@ -9,6 +9,7 @@ import time
 try:
     from detectron2.utils.events import WandbWriter
     from detectron2.evaluation import WandbVisualizer
+
     use_wandb = True
 except Exception as e:
     print("== WARNING: not using WANDB for logging")
