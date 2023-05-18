@@ -15,6 +15,7 @@ MODEL:
     RES5_MULTI_GRID: [1, 1, 1]  # not used
 DATASETS:
   TRAIN: ("rilv7",)
+#  TRAIN: ("rilv7-shapenetv1",)
   TEST: ("rilv7-test",)
 SOLVER:
   IMS_PER_BATCH: 16

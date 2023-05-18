@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="mask2former",
-    package_dir={"": "mask2former"},
+    package_dir={"mask2former": "mask2former"},
     version="1.0",
     install_requires=[
         "cython",
