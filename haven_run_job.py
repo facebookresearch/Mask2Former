@@ -29,7 +29,7 @@ if __name__ == "__main__":
             "cpu": 4,
             "mem": 20,
             "gpu": 4,
-            "gpu_mem": 12,
+            "gpu_mem": 16,
             "gpu_model": "!A100",
         },
         "interactive": False,
@@ -39,16 +39,20 @@ if __name__ == "__main__":
     savedir_base = os.path.abspath("../results/haven_jobs")
     config_name = "maskformer2_R50_bs16_50ep.yaml"
     # create a multiline string
+    # command = """
+    # /mnt/home/miniconda38/bin/python train_net.py
+    # --config-file configs/ril/panoptic-segmentation/maskformer2_R50_bs16_50ep.yaml
+    # --num-gpus 4 SOLVER.IMS_PER_BATCH 4 SOLVER.BASE_LR 0.0001
+    # """
     command = """
-    /mnt/home/miniconda38/bin/python train_net.py
-    --config-file configs/ril/panoptic-segmentation/maskformer2_R50_bs16_50ep.yaml
-    --num-gpus 4 SOLVER.IMS_PER_BATCH 4 SOLVER.BASE_LR 0.0001
+        /mnt/home/miniconda38/bin/python train_net.py --config-file 
+        configs/ril/panoptic-segmentation/ril1-shnv1.yaml 
+        --num-gpus 4
     """
-
     # convert multiline to single line
     command = " ".join(command.split())
 
-    vis_flag = True
+    vis_flag = False
 
     if vis_flag:
         from haven import haven_utils as hu

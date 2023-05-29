@@ -286,6 +286,7 @@ class MaskFormer(nn.Module):
     def panoptic_inference(self, mask_cls, mask_pred):
         scores, labels = F.softmax(mask_cls, dim=-1).max(-1)
         mask_pred = mask_pred.sigmoid()
+        # breakpoint()
 
         keep = labels.ne(self.sem_seg_head.num_classes) & (scores > self.object_mask_threshold)
         cur_scores = scores[keep]
@@ -311,6 +312,7 @@ class MaskFormer(nn.Module):
             stuff_memory_list = {}
             for k in range(cur_classes.shape[0]):
                 pred_class = cur_classes[k].item()
+                pred_score = cur_scores[k].item()
                 isthing = pred_class in self.metadata.thing_dataset_id_to_contiguous_id.values()
                 mask_area = (cur_mask_ids == k).sum().item()
                 original_area = (cur_masks[k] >= 0.5).sum().item()
@@ -336,6 +338,7 @@ class MaskFormer(nn.Module):
                             "id": current_segment_id,
                             "isthing": bool(isthing),
                             "category_id": int(pred_class),
+                            "score": pred_score,
                         }
                     )
 

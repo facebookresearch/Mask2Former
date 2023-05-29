@@ -12,7 +12,9 @@ try:
 
     use_wandb = True
 except Exception as e:
+    print(e)
     print("== WARNING: not using WANDB for logging")
+
     use_wandb = False
 
 try:

@@ -31,8 +31,8 @@ cfg = get_cfg()
 add_deeplab_config(cfg)
 add_maskformer2_config(cfg)
 cfg.merge_from_file("configs/ril/panoptic-segmentation/maskformer2_R50_bs16_50ep.yaml")
-# cfg.MODEL.WEIGHTS = "output/model_final.pth"
-cfg.MODEL.WEIGHTS = "output/exp3-adding-noise-80kiter/model_final.pth"
+cfg.MODEL.WEIGHTS = "output/model_final.pth"
+# cfg.MODEL.WEIGHTS = "output/exp3-adding-noise-80kiter/model_final.pth"
 cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON = False
 cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON = False
 cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON = True
@@ -43,8 +43,8 @@ cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON = True
 cfg.MODEL.MASK_FORMER.TEST.OBJECT_MASK_THRESHOLD = 0.8
 cfg.MODEL.MASK_FORMER.TEST.OVERLAP_THRESHOLD = 0.8
 
-BATCH = False  # for looking at a single image (and opening a plt window)
-# BATCH = True # for running this for 12 images (test/real) and writing the res to disk
+# BATCH = False  # for looking at a single image (and opening a plt window)
+BATCH = True  # for running this for 12 images (test/real) and writing the res to disk
 
 # ======== END PLAYGROUND
 
@@ -75,7 +75,7 @@ if BATCH:
         panoptic_result = eval_on_img(im)
         cv2.imwrite(f"output/pred-{img_name}.png", panoptic_result[:, :, ::-1])
 
-    for i in range(2):
+    for i in trange(2):
         im = cv2.imread(f"real-test-{i+1}.jpg")
         panoptic_result = eval_on_img(im)
         cv2.imwrite(f"output/pred-real-{i+1}.jpg", panoptic_result[:, :, ::-1])

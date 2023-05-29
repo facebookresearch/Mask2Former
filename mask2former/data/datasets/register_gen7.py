@@ -1,3 +1,4 @@
+import copy
 import json
 import os.path
 
@@ -6,23 +7,33 @@ from detectron2.data import DatasetCatalog, MetadataCatalog
 which_folder = 1
 
 if which_folder == 0:
-    savedir_base_json = "~/dev/ril-digitaltwin/scripts/"
-    savedir_base_images = "~/dev/ril-digitaltwin/scripts/imgs/512/"
+    savedir_base = "~/data/ril-digitaltwin"
 elif which_folder == 1:
     # savedir_base_json = "/mnt/home/projects/digitaltwin/data/generatorv7-small"
-    savedir_base_json = "/mnt/home/projects/digitaltwin/data2/gen7panoptic/gen7"
-    savedir_base_images = savedir_base_json
+    savedir_base = "/mnt/colab_public/digitaltwin"
 
-PATH_IMAGES = os.path.expanduser(f"{savedir_base_images}/generatorv7")
-PATH_PANOPT = os.path.expanduser(f"{savedir_base_images}/generatorv7_panoptic")
+## MINI DS
+# PATH_IMAGES = os.path.expanduser("~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7")
+# PATH_PANOPT = os.path.expanduser("~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7_panoptic")
+# PATH_SEMSEG = os.path.expanduser("~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7_semseg")
+
+## FULL DS
+PATH_IMAGES = os.path.expanduser(f"{savedir_base}/gen7panoptic/gen7/generatorv7")
+PATH_IMAGES_SHAPENET = os.path.expanduser(f"{savedir_base}/gen7-shapenet/generatorv7_shapenetv1")
+PATH_PANOPT = os.path.expanduser(
+    f"{savedir_base}/gen7panoptic/gen7/generatorv7_panoptic"
+)
+# PATH_SEMSEG = PATH_PANOPT  # FIXME this is wrong but inconsequential
 DATA_JSON = os.path.join(PATH_PANOPT, "00000_dsinfo.json")
 
-DATASET_NAME = "rilv7"
+DATASET_NAME_RAW = "rilv7"
+DATASET_NAME_SHN = "rilv7-shapenetv1"
 DATASET_NAME_TEST = "rilv7-test"
 TEST_SPLIT = 0.1  # 10 %
 
 data_json = json.load(open(DATA_JSON, "r"))
 categories = data_json["categories"]
+dj_shn = copy.deepcopy(data_json)
 
 len_data = len(data_json["annotations"])
 len_test = int(len_data * TEST_SPLIT)
@@ -77,7 +88,6 @@ def replace_paths(info, path_inputs, path_panoptic, metadata, start, end):
     return out
 
 
-# TODO integrate this and basically redo this file from scratch with new knawledge
 def get_metadata():
     meta = {}
     thing_classes = [k["name"] for k in categories]
@@ -106,21 +116,31 @@ def get_metadata():
 
 
 metadata = get_metadata()
-data_train = replace_paths(data_json, PATH_IMAGES, PATH_PANOPT, metadata, 0, len_train)
+data_train_raw = replace_paths(
+    data_json, PATH_IMAGES, PATH_PANOPT, metadata, 0, len_train
+)
+data_train_shapenet = replace_paths(
+    dj_shn, PATH_IMAGES_SHAPENET, PATH_PANOPT, metadata, 0, len_train
+)
 data_test = replace_paths(
     data_json, PATH_IMAGES, PATH_PANOPT, metadata, len_train, len_data
 )
 
 
-def get_data_train():  # this is stupid -.-'
-    return data_train
+def get_data_train_raw():  # this is stupid -.-'
+    return data_train_raw
+
+
+def get_data_train_shn():  # this is stupid -.-'
+    return data_train_shapenet
 
 
 def get_data_test():  # this is stupid -.-'
     return data_test
 
 
-DatasetCatalog.register(DATASET_NAME, get_data_train)
+DatasetCatalog.register(DATASET_NAME_RAW, get_data_train_raw)
+DatasetCatalog.register(DATASET_NAME_SHN, get_data_train_shn)
 DatasetCatalog.register(DATASET_NAME_TEST, get_data_test)
 
 full_metadata = {
@@ -134,31 +154,29 @@ full_metadata = {
 full_metadata.update(metadata)
 
 
-MetadataCatalog.get(DATASET_NAME).set(
+MetadataCatalog.get(DATASET_NAME_RAW).set(
+    panoptic_json=data_json_train_path, **full_metadata
+)
+MetadataCatalog.get(DATASET_NAME_SHN).set(
     panoptic_json=data_json_train_path, **full_metadata
 )
 MetadataCatalog.get(DATASET_NAME_TEST).set(
     panoptic_json=data_json_test_path, **full_metadata
 )
 
-
-# TODO then add this to toolkit
-# todo install mask2former on toolkit
-# TODO see if we can call the yaml file with the train_net script
-
 # python train_net.py --config-file ../configs/coco/panoptic-segmentation/maskformer2_R50_bs16_50ep.yaml --num-gpus 2 SOLVER.IMS_PER_BATCH 2 SOLVER.BASE_LR 0.0001
 
 if __name__ == "__main__":
     from pprint import pprint
 
-    data = get_data_train()
+    data = get_data_train_shn()
     print(len(data))
     print(data[2])
     import random
     from detectron2.utils.visualizer import Visualizer
     import cv2
 
-    meta = MetadataCatalog.get(DATASET_NAME)
+    meta = MetadataCatalog.get(DATASET_NAME_SHN)
 
     for d in random.sample(data, 3):
         # d["segments_info"] = [adjust_meta_for_vis(x, metadata) for x in d["segments_info"]]
