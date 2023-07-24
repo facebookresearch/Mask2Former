@@ -6,25 +6,25 @@ This script is a simplified version of the training script in detectron2/tools.
 """
 import time, shutil, json
 
-try:
-    from detectron2.utils.events import WandbWriter
-    from detectron2.evaluation import WandbVisualizer
+# try:
+#     from detectron2.utils.events import WandbWriter
+#     from detectron2.evaluation import WandbVisualizer
 
-    use_wandb = True
-except Exception as e:
-    print(e)
-    print("== WARNING: not using WANDB for logging")
+#     use_wandb = True
+# except Exception as e:
+#     print(e)
+#     print("== WARNING: not using WANDB for logging")
 
-    use_wandb = False
+#     use_wandb = False
+use_wandb = False
+# try:
+#     # ignore ShapelyDeprecationWarning from fvcore
+#     from shapely.errors import ShapelyDeprecationWarning
+#     import warnings
 
-try:
-    # ignore ShapelyDeprecationWarning from fvcore
-    from shapely.errors import ShapelyDeprecationWarning
-    import warnings
-
-    warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
-except:
-    pass
+#     warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+# except:
+#     pass
 
 import copy
 import itertools
@@ -33,7 +33,7 @@ import os
 
 from collections import OrderedDict
 from typing import Any, Dict, List, Set
-
+from detectron2.engine import hooks
 import torch
 
 import detectron2.utils.comm as comm
@@ -45,6 +45,12 @@ from detectron2.engine import (
     default_argument_parser,
     default_setup,
     launch,
+)
+from detectron2.evaluation import (
+    DatasetEvaluator,
+    inference_on_dataset,
+    print_csv_format,
+    verify_results,
 )
 from detectron2.evaluation import (
     CityscapesInstanceEvaluator,
@@ -62,16 +68,14 @@ from detectron2.utils.logger import setup_logger
 
 
 # MaskFormer
-from mask2former import (
-    COCOInstanceNewBaselineDatasetMapper,
-    COCOPanopticNewBaselineDatasetMapper,
-    InstanceSegEvaluator,
-    MaskFormerInstanceDatasetMapper,
-    MaskFormerPanopticDatasetMapper,
-    MaskFormerSemanticDatasetMapper,
-    SemanticSegmentorWithTTA,
-    add_maskformer2_config,
-)
+from mask2former import COCOInstanceNewBaselineDatasetMapper
+from mask2former import COCOPanopticNewBaselineDatasetMapper
+from mask2former import InstanceSegEvaluator
+from mask2former import MaskFormerInstanceDatasetMapper
+from mask2former import MaskFormerPanopticDatasetMapper
+from mask2former import MaskFormerSemanticDatasetMapper
+from mask2former import SemanticSegmentorWithTTA
+from mask2former import add_maskformer2_config
 
 
 class Trainer(DefaultTrainer):
@@ -93,6 +97,26 @@ class Trainer(DefaultTrainer):
                 )
             )
         return writers
+
+    def after_step(self):
+        for h in self._hooks:
+            h.after_step()
+
+        if self.iter > 0 and self.iter % 50 == 0:
+            # load json where each line is a dict
+            path = os.path.join(self.cfg.OUTPUT_DIR, "metrics.json")
+            assert os.path.exists(path)
+            with open(path, "r") as f:
+                lines = f.readlines()
+                score_list = [json.loads(line) for line in lines]
+
+            # save as pkl in score_list.pkl - haven can read this
+            import pickle
+
+            path = os.path.join(self.cfg.OUTPUT_DIR, "score_list.pkl")
+            with open(path, "wb") as f:
+                pickle.dump(score_list, f)
+            print(f"Saved: {self.cfg.OUTPUT_DIR}")
 
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
@@ -207,6 +231,148 @@ class Trainer(DefaultTrainer):
         elif len(evaluator_list) == 1:
             return evaluator_list[0]
         return DatasetEvaluators(evaluator_list)
+
+    def run_step(self):
+        self._trainer.iter = self.iter
+        self._trainer.run_step()
+
+    @classmethod
+    def test(cls, cfg, model, evaluators=None):
+        """
+        Evaluate the given model. The given model is expected to already contain
+        weights to evaluate.
+
+        Args:
+            cfg (CfgNode):
+            model (nn.Module):
+            evaluators (list[DatasetEvaluator] or None): if None, will call
+                :meth:`build_evaluator`. Otherwise, must have the same length as
+                ``cfg.DATASETS.TEST``.
+
+        Returns:
+            dict: a dict of result metrics
+        """
+        logger = logging.getLogger(__name__)
+        if isinstance(evaluators, DatasetEvaluator):
+            evaluators = [evaluators]
+        if evaluators is not None:
+            assert len(cfg.DATASETS.TEST) == len(evaluators), "{} != {}".format(
+                len(cfg.DATASETS.TEST), len(evaluators)
+            )
+
+        results = OrderedDict()
+        for idx, dataset_name in enumerate(cfg.DATASETS.TEST):
+            data_loader = cls.build_test_loader(cfg, dataset_name)
+            # When evaluators are passed in as arguments,
+            # implicitly assume that evaluators can be created before data_loader.
+            if evaluators is not None:
+                evaluator = evaluators[idx]
+            else:
+                try:
+                    evaluator = cls.build_evaluator(cfg, dataset_name)
+                except NotImplementedError:
+                    logger.warn(
+                        "No evaluator found. Use `DefaultTrainer.test(evaluators=)`, "
+                        "or implement its `build_evaluator` method."
+                    )
+                    results[dataset_name] = {}
+                    continue
+            results_i = inference_on_dataset(model, data_loader, evaluator)
+            results[dataset_name] = results_i
+            if comm.is_main_process():
+                assert isinstance(
+                    results_i, dict
+                ), "Evaluator must return a dict on the main process. Got {} instead.".format(
+                    results_i
+                )
+                logger.info(
+                    "Evaluation results for {} in csv format:".format(dataset_name)
+                )
+                print_csv_format(results_i)
+
+        if len(results) == 1:
+            results = list(results.values())[0]
+        return results
+
+    def build_hooks(self):
+        """
+        Build a list of default hooks, including timing, evaluation,
+        checkpointing, lr scheduling, precise BN, writing events.
+
+        Returns:
+            list[HookBase]:
+        """
+        cfg = self.cfg.clone()
+        cfg.defrost()
+        cfg.DATALOADER.NUM_WORKERS = 0  # save some memory and time for PreciseBN
+
+        ret = [
+            hooks.IterationTimer(),
+            hooks.LRScheduler(),
+            hooks.PreciseBN(
+                # Run at the same freq as (but before) evaluation.
+                cfg.TEST.EVAL_PERIOD,
+                self.model,
+                # Build a new data loader to not affect training
+                self.build_train_loader(cfg),
+                cfg.TEST.PRECISE_BN.NUM_ITER,
+            )
+            if cfg.TEST.PRECISE_BN.ENABLED and get_bn_modules(self.model)
+            else None,
+        ]
+
+        # Do PreciseBN before checkpointer, because it updates the model and need to
+        # be saved by checkpointer.
+        # This is not always the best: if checkpointing has a different frequency,
+        # some checkpoints may have more precise statistics than others.
+        if comm.is_main_process():
+            ret.append(
+                hooks.PeriodicCheckpointer(
+                    self.checkpointer, cfg.SOLVER.CHECKPOINT_PERIOD
+                )
+            )
+
+        def test_and_save_results():
+            self._last_eval_results = self.test(self.cfg, self.model)
+            if comm.is_main_process():
+                import json
+                import pandas as pd
+
+                # Save Best Model
+                fname = os.path.join(self.cfg.OUTPUT_DIR, "metrics.json")
+                # read a text file fname and convert each line to a dict and aggregate to a list
+                with open(fname) as f:
+                    lines = f.readlines()
+                score_list = [json.loads(line) for line in lines]
+
+                score_df = pd.DataFrame(score_list)
+
+                # Compare PQ scores
+                if (
+                    "panoptic_seg/PQ" not in score_df.columns
+                    or score_df["panoptic_seg/PQ"].max()
+                    < self._last_eval_results["panoptic_seg"]["PQ"]
+                ):
+                    # Save best model
+                    self.checkpointer.save("model_best")
+
+                    # Save metrics in metrics_best.json
+                    with open(fname.replace(".json", "_best.json"), "a") as f:
+                        f.write(
+                            json.dumps(self._last_eval_results["panoptic_seg"]) + "\n"
+                        )
+
+            return self._last_eval_results
+
+        # Do evaluation after checkpointer, because then if it fails,
+        # we can use the saved checkpoint to debug.
+        ret.append(hooks.EvalHook(cfg.TEST.EVAL_PERIOD, test_and_save_results))
+
+        if comm.is_main_process():
+            # Here the default print/log frequency of each writer is used.
+            # run writers in the end, so that evaluation metrics are written
+            ret.append(hooks.PeriodicWriter(self.build_writers(), period=20))
+        return ret
 
     @classmethod
     def build_train_loader(cls, cfg):
@@ -363,28 +529,11 @@ def setup(args):
     return cfg
 
 
-def main(args):
-    cfg = setup(args)
-
-    # output_folder should depend on config used
-    exp_dict = {"config": args.config_file}
-    cfg.defrost()
-
-
-    cfg.OUTPUT_DIR = f"output/{hash_dict(exp_dict)}"
-
-    # delete folder if exists
-    if os.path.exists(cfg.OUTPUT_DIR):
-        shutil.rmtree(cfg.OUTPUT_DIR)
-
-    os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
-    with open(cfg.OUTPUT_DIR + "/exp_dict.json", "w") as json_file:
-        json.dump(exp_dict, json_file, indent=4, sort_keys=True)
-
-    if args.eval_only:
+def main(cfg, eval_only=False, resume=False):
+    if eval_only:
         model = Trainer.build_model(cfg)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
-            cfg.MODEL.WEIGHTS, resume=args.resume
+            cfg.MODEL.WEIGHTS, resume=resume
         )
         res = Trainer.test(cfg, model)
         if cfg.TEST.AUG.ENABLED:
@@ -394,55 +543,36 @@ def main(args):
         return res
 
     trainer = Trainer(cfg)
-    trainer.resume_or_load(resume=args.resume)
+    trainer.resume_or_load(resume=resume)
     return trainer.train()
 
 
-def hash_dict(exp_dict):
-    import hashlib
-
-    dict2hash = ""
-    if not isinstance(exp_dict, dict):
-        raise ValueError("exp_dict is not a dict")
-
-    for k in sorted(exp_dict.keys()):
-        if "." in k:
-            raise ValueError(". has special purpose")
-        elif isinstance(exp_dict[k], dict):
-            v = hash_dict(exp_dict[k])
-        elif isinstance(exp_dict[k], tuple):
-            raise ValueError(
-                f"{exp_dict[k]} tuples can't be hashed yet, consider converting tuples to lists"
-            )
-        elif (
-            isinstance(exp_dict[k], list)
-            and len(exp_dict[k])
-            and isinstance(exp_dict[k][0], dict)
-        ):
-            v_str = ""
-            for e in exp_dict[k]:
-                if isinstance(e, dict):
-                    v_str += hash_dict(e)
-                else:
-                    raise ValueError("all have to be dicts")
-            v = v_str
-        else:
-            v = exp_dict[k]
-
-        dict2hash += str(k) + "/" + str(v)
-    hash_id = hashlib.md5(dict2hash.encode()).hexdigest()
-
-    return hash_id
+def main_launch(
+    cfg=None,
+    num_gpus=1,
+    num_machines=1,
+    machine_rank=0,
+    dist_url="tcp://127.0.0.1:62163",
+):
+    if cfg is None:
+        cfg = setup(args)
+    launch(
+        main,
+        num_gpus,
+        num_machines=num_machines,
+        machine_rank=machine_rank,
+        dist_url=dist_url,
+        args=(cfg,),
+    )
 
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     print("Command Line Args:", args)
-    launch(
-        main,
-        args.num_gpus,
+    main_launch(
+        cfg=None,
+        num_gpus=args.num_gpus,
         num_machines=args.num_machines,
         machine_rank=args.machine_rank,
         dist_url=args.dist_url,
-        args=(args,),
     )

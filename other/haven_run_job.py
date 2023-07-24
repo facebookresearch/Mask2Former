@@ -26,8 +26,8 @@ if __name__ == "__main__":
         ],
         "restartable": True,
         "resources": {
-            "cpu": 4,
-            "mem": 20,
+            "cpu": 5,
+            "mem": 80,
             "gpu": 4,
             "gpu_mem": 16,
             "gpu_model": "!A100",
@@ -57,10 +57,7 @@ if __name__ == "__main__":
     if vis_flag:
         from haven import haven_utils as hu
 
-        fname = (
-            "/mnt/home/projects/results/haven_jobs/"
-            "b589779af8dbf27ed4c7905fb11ef0ed/code/output/metrics.json"
-        )
+        fname = "/mnt/home/projects/results/haven_jobs/dd120b7f383e04869f3ddd86a9c491bc/code/output/metrics.json"
         import json
 
         # read a text file fname and convert each line to a dict and aggregate to a list
@@ -72,13 +69,44 @@ if __name__ == "__main__":
         import pylab as plt
 
         plt.figure(figsize=(10, 5))
-        plt.plot([d["iteration"] for d in data], [d["total_loss"] for d in data])
-        plt.xlabel("Epoch")
-        plt.ylabel("Total Loss")
-        plt.title(f"{config_name}")
-        plt.savefig("total_loss_vs_epoch.jpg")
-        print()
+        #
+        # create figs
+        # os.makedirs("figs", exist_ok=True)
 
+        cols = [
+            "total_loss",
+            "panoptic_seg/PQ",
+            "panoptic_seg/PQ_st",
+            "panoptic_seg/PQ_th",
+            "panoptic_seg/RQ",
+            "panoptic_seg/RQ_st",
+            "panoptic_seg/RQ_th",
+            "panoptic_seg/SQ",
+            "panoptic_seg/SQ_st",
+            "panoptic_seg/SQ_th",
+        ]
+        # sub plots
+        fig, axs = plt.subplots(2, 5, figsize=(16, 6))
+        # global title
+        fig.suptitle(f"{config_name}")
+
+        axs = axs.flatten()
+        for i, k in enumerate(cols):
+            # filter data for each key
+            data = [d for d in data if k in d]
+
+            # plot the data for each axis
+            axs[i].plot([d["iteration"] for d in data], [d[k] for d in data])
+            axs[i].set_xlabel("Epoch")
+            axs[i].set_ylabel(k)
+
+        # Adjust the layout
+        plt.tight_layout()
+
+        # Show the plot
+        plt.savefig(f"plot.jpg")
+        plt.close()
+        print()
     else:
         # This command copies a snapshot of the code, saves the logs and errors,
         # keeps track of the job status, keeps backup, and ensures one unique command per job
