@@ -26,6 +26,7 @@ use_wandb = False
 # except:
 #     pass
 
+import pickle
 import copy
 import itertools
 import logging
@@ -83,21 +84,6 @@ class Trainer(DefaultTrainer):
     Extension of the Trainer class adapted to MaskFormer.
     """
 
-    # if you want to track expeirment metrics/configs/media
-    def build_writers(self):
-        print("=== using wandb")
-        time.sleep(2)
-        writers = super().build_writers()
-        if use_wandb:
-            writers.append(
-                WandbWriter(
-                    config=self.cfg,
-                    group=self.cfg.WANDB.GROUP,
-                    name=self.cfg.WANDB.NAME,
-                )
-            )
-        return writers
-
     def after_step(self):
         for h in self._hooks:
             h.after_step()
@@ -111,8 +97,6 @@ class Trainer(DefaultTrainer):
                 score_list = [json.loads(line) for line in lines]
 
             # save as pkl in score_list.pkl - haven can read this
-            import pickle
-
             path = os.path.join(self.cfg.OUTPUT_DIR, "score_list.pkl")
             with open(path, "wb") as f:
                 pickle.dump(score_list, f)
@@ -130,8 +114,7 @@ class Trainer(DefaultTrainer):
         if output_folder is None:
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
         evaluator_list = []
-        if use_wandb:
-            evaluator_list.append(WandbVisualizer(dataset_name, size=5))
+
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
         # semantic segmentation
         if evaluator_type in ["sem_seg", "ade20k_panoptic_seg"]:

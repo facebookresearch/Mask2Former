@@ -56,8 +56,8 @@ def get_dataset():
 
         data_json = json.load(open(DATA_JSON, "r"))
         categories = data_json["categories"]
-        dj_shn = copy.deepcopy(data_json)
-
+        # dj_shn = copy.deepcopy(data_json)
+        dj_shn = json.load(open(DATA_JSON, "r"))
         len_data = len(data_json["annotations"])
         len_test = int(len_data * TEST_SPLIT)
         len_train = len_data - len_test
@@ -65,12 +65,14 @@ def get_dataset():
         data_json_train = data_json.copy()
         data_json_train["annotations"] = data_json_train["annotations"][:len_train]
         data_json_train_path = os.path.join(PATH_PANOPT, "00000_dsinfo_train.json")
-        json.dump(data_json_train, open(data_json_train_path, "w"))
+        if not os.path.exists(data_json_train_path):
+            json.dump(data_json_train, open(data_json_train_path, "w"))
 
         data_json_test = data_json.copy()
         data_json_test["annotations"] = data_json_test["annotations"][len_train:]
         data_json_test_path = os.path.join(PATH_PANOPT, "00000_dsinfo_test.json")
-        json.dump(data_json_test, open(data_json_test_path, "w"))
+        if not os.path.exists(data_json_test_path):
+            json.dump(data_json_test, open(data_json_test_path, "w"))
 
         def convert_category_id(segment_info, meta):
             if segment_info["category_id"] in meta["thing_dataset_id_to_contiguous_id"]:
