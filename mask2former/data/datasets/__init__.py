@@ -8,4 +8,5 @@ from . import (
     register_ade20k_instance,
     register_mapillary_vistas_panoptic,
     register_gen7,
+    register_gen9,
 )

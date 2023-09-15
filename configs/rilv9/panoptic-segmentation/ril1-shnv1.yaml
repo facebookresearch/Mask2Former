@@ -1,0 +1,8 @@
+_BASE_: maskformer2_R50_bs16_50ep.yaml
+DATASETS:
+#  TRAIN: ("rilv7",)
+  TRAIN: ("rilv9-shapenetv1",)
+SOLVER:
+#  MAX_ITER: 80000 # 20h
+  MAX_ITER: 160000
+
