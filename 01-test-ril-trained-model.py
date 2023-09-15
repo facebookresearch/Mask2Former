@@ -26,12 +26,18 @@ from mask2former import (
 
 ril_metadata = MetadataCatalog.get("rilv7")
 
+FOLDER = "output/exp4-shapenetv1-80kiter"
+# FOLDER = "output/exp5-shapenetv1-160kiter"
+
+print("using folder", FOLDER)
 
 cfg = get_cfg()
 add_deeplab_config(cfg)
 add_maskformer2_config(cfg)
 cfg.merge_from_file("configs/ril/panoptic-segmentation/maskformer2_R50_bs16_50ep.yaml")
-cfg.MODEL.WEIGHTS = "output/model_final.pth"
+# cfg.MODEL.WEIGHTS = "output/model_final.pth"
+# cfg.MODEL.WEIGHTS = "output/exp5-shapenetv1-160kiter/model_final.pth"
+cfg.MODEL.WEIGHTS = f"{FOLDER}/model_final.pth"
 # cfg.MODEL.WEIGHTS = "output/exp3-adding-noise-80kiter/model_final.pth"
 cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON = False
 cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON = False
@@ -73,12 +79,12 @@ if BATCH:
 
         im = cv2.imread(os.path.expanduser(f"~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7/{img_name}.png"))
         panoptic_result = eval_on_img(im)
-        cv2.imwrite(f"output/pred-{img_name}.png", panoptic_result[:, :, ::-1])
+        cv2.imwrite(f"{FOLDER}/pred-{img_name}.png", panoptic_result[:, :, ::-1])
 
     for i in trange(2):
         im = cv2.imread(f"real-test-{i+1}.jpg")
         panoptic_result = eval_on_img(im)
-        cv2.imwrite(f"output/pred-real-{i+1}.jpg", panoptic_result[:, :, ::-1])
+        cv2.imwrite(f"{FOLDER}/pred-real-{i+1}.jpg", panoptic_result[:, :, ::-1])
 else:
     im = cv2.imread(f"real-test-1.jpg")
     print("beginning inference...")
