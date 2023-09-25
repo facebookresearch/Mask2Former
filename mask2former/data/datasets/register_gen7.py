@@ -39,16 +39,12 @@ def get_dataset():
 
     else:
         ## FULL DS
-        PATH_IMAGES = os.path.expanduser(
-            f"{savedir_base}/gen7panoptic/gen7/generatorv7"
-        )
+        PATH_IMAGES = os.path.expanduser(f"{savedir_base}/generatorv7")
 
         PATH_IMAGES_SHAPENET = os.path.expanduser(
-            f"{savedir_base}/gen7-shapenet/generatorv7_shapenetv1"
+            f"{savedir_base}/generatorv7_shapenetv1"
         )
-        PATH_PANOPT = os.path.expanduser(
-            f"{savedir_base}/gen7panoptic/gen7/generatorv7_panoptic"
-        )
+        PATH_PANOPT = os.path.expanduser(f"{savedir_base}/generatorv7_panoptic")
         # PATH_SEMSEG = PATH_PANOPT  # FIXME this is wrong but inconsequential
         DATA_JSON = os.path.join(PATH_PANOPT, "00000_dsinfo.json")
 
@@ -190,7 +186,7 @@ def get_dataset():
         #     pickle.dump(DatasetCatalog, f)
 
 
-get_dataset()
+# get_dataset()
 
 # python train_net.py --config-file ../configs/coco/panoptic-segmentation/maskformer2_R50_bs16_50ep.yaml --num-gpus 2 SOLVER.IMS_PER_BATCH 2 SOLVER.BASE_LR 0.0001
 

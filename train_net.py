@@ -31,7 +31,7 @@ import copy
 import itertools
 import logging
 import os
-
+import weakref
 from collections import OrderedDict
 from typing import Any, Dict, List, Set
 from detectron2.engine import hooks
@@ -77,12 +77,48 @@ from mask2former import MaskFormerPanopticDatasetMapper
 from mask2former import MaskFormerSemanticDatasetMapper
 from mask2former import SemanticSegmentorWithTTA
 from mask2former import add_maskformer2_config
+from detectron2.engine.defaults import create_ddp_model
+from detectron2.engine.train_loop import AMPTrainer, SimpleTrainer
 
 
 class Trainer(DefaultTrainer):
     """
     Extension of the Trainer class adapted to MaskFormer.
     """
+
+    # def __init__(self, cfg):
+    #     """
+    #     Args:
+    #         cfg (CfgNode):
+    #     """
+    #     super().__init__()
+    #     logger = logging.getLogger("detectron2")
+    #     if not logger.isEnabledFor(logging.INFO):  # setup_logger is not called for d2
+    #         setup_logger()
+    #     cfg = DefaultTrainer.auto_scale_workers(cfg, comm.get_world_size())
+
+    #     # Assume these objects must be constructed in this order.
+    #     model = self.build_model(cfg)
+    #     optimizer = self.build_optimizer(cfg, model)
+    #     data_loader = self.build_train_loader(cfg)
+
+    #     model = create_ddp_model(model, broadcast_buffers=False)
+    #     self._trainer = (AMPTrainer if cfg.SOLVER.AMP.ENABLED else SimpleTrainer)(
+    #         model, data_loader, optimizer
+    #     )
+
+    #     self.scheduler = self.build_lr_scheduler(cfg, optimizer)
+    #     self.checkpointer = DetectionCheckpointer(
+    #         # Assume you want to save checkpoints together with logs/statistics
+    #         model,
+    #         cfg.OUTPUT_DIR,
+    #         trainer=weakref.proxy(self),
+    #     )
+    #     self.start_iter = 0
+    #     self.max_iter = cfg.SOLVER.MAX_ITER
+    #     self.cfg = cfg
+
+    #     self.register_hooks(self.build_hooks())
 
     def after_step(self):
         for h in self._hooks:
@@ -512,7 +548,25 @@ def setup(args):
     return cfg
 
 
+import datasets
+
+import datasets
+
+
 def main(cfg, eval_only=False, resume=False):
+    # get dataset
+    train_set_name = cfg.DATASETS.TRAIN[0]
+    test_set_name = cfg.DATASETS.TEST[0]
+    
+    if train_set_name == "rilv9" and test_set_name == "rilv9-test":
+        datasets.register_ril_dataset(
+            savedir_base="/mnt/colab_public/digitaltwin/generatorv9/gen9",
+            train_set_name=train_set_name,
+            test_set_name=test_set_name,
+        )
+    else:
+        raise ValueError("Unknown dataset")
+    
     if eval_only:
         model = Trainer.build_model(cfg)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(

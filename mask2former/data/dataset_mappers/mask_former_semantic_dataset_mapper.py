@@ -88,6 +88,7 @@ class MaskFormerSemanticDatasetMapper:
 
         # Assume always applies to the training set.
         dataset_names = cfg.DATASETS.TRAIN
+        assert dataset_names[0] in MetadataCatalog, "You forgot to register this dataset!"
         meta = MetadataCatalog.get(dataset_names[0])
         ignore_label = meta.ignore_label
 

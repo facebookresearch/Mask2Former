@@ -24,12 +24,13 @@ ARGS = argparse.Namespace(**EXP_DICT_BASE)
 cfg = setup(ARGS)
 
 
-def update_cfg(lr, batch_size, dataset, model=None):
+def update_cfg(lr, batch_size, train_set, test_set, model):
     cfg_new = cfg.clone()
     cfg_new.defrost()
     cfg_new.SOLVER.BASE_LR = lr
     cfg_new.SOLVER.IMS_PER_BATCH = batch_size
-    cfg_new.DATASETS.TRAIN = (dataset,)
+    cfg_new.DATASETS.TRAIN = (train_set,)
+    cfg_new.DATASETS.TEST = (test_set,)
 
     if model == "swin":
         cfg_new.MODEL.BACKBONE.NAME = "D2SwinTransformer"
@@ -54,8 +55,9 @@ EXP_GROUPS["baselines_large_scale"] = []
 for lr in [0.00001, 0.0001, 0.01, 0.001]:
     for batch_size in [4]:
         for model in [None, "swin"]:
-            dataset = "rilv7-shapenetv1"
-            cfg_new = update_cfg(lr, batch_size, dataset)
+            train_set = "rilv9"
+            test_set = "rilv9-test"
+            cfg_new = update_cfg(lr, batch_size, train_set, test_set, model=model)
             path = (
                 f"configs/configs_pkl/{hu.hash_dict({'config_name': str(cfg_new)})}.pkl"
             )
@@ -65,7 +67,8 @@ for lr in [0.00001, 0.0001, 0.01, 0.001]:
                 {
                     "model": model,
                     "config_path": path,
-                    "dataset": dataset,
+                    "train_set": train_set,
+                    "test_set": test_set,
                     "lr": lr,
                     "batch_size": batch_size,
                     "num_gpus": 4,
@@ -78,10 +81,13 @@ for lr in [0.00001, 0.0001, 0.01, 0.001]:
 EXP_GROUPS["baselines_small_scale"] = []
 for lr in [0.0001]:
     for batch_size in [2]:
-        for model in ["swin"]:
-            dataset = "rilv7-shapenetv1"
-
-            cfg_new = update_cfg(lr, batch_size, dataset, model="swin")
+        for model in [
+            None,
+            "swin",
+        ]:
+            train_set = "rilv9"
+            test_set = "rilv9-test"
+            cfg_new = update_cfg(lr, batch_size, train_set, test_set, model=model)
 
             path = (
                 f"configs/configs_pkl/{hu.hash_dict({'config_name': str(cfg_new)})}.pkl"
@@ -92,7 +98,8 @@ for lr in [0.0001]:
                 {
                     "model": model,
                     "config_path": path,
-                    "dataset": dataset,
+                    "train_set": train_set,
+                    "test_set": test_set,
                     "lr": lr,
                     "batch_size": batch_size,
                     "num_gpus": 1,
