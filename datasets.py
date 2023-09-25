@@ -1,14 +1,7 @@
-import copy
 import json
 import os.path
 
 from detectron2.data import DatasetCatalog, MetadataCatalog
-
-## MINI DS
-# PATH_IMAGES = os.path.expanduser("~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7")
-# PATH_PANOPT = os.path.expanduser("~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7_panoptic")
-# PATH_SEMSEG = os.path.expanduser("~/dev/ril-digitaltwin/scripts/imgs/512/generatorv7_semseg")
-
 
 def register_ril_dataset(savedir_base, train_set_name, test_set_name):
     """
@@ -20,7 +13,7 @@ def register_ril_dataset(savedir_base, train_set_name, test_set_name):
     PATH_IMAGES = os.path.expanduser(f"{savedir_base}/generatorv9")
     PATH_IMAGES_SHAPENET = os.path.expanduser(f"{savedir_base}/generatorv9_shapenetv1")
     PATH_PANOPT = os.path.expanduser(f"{savedir_base}/generatorv9_panoptic")
-    # PATH_SEMSEG = PATH_PANOPT  # FIXME this is wrong but inconsequential
+
     DATA_JSON = os.path.join(PATH_PANOPT, "00000_dsinfo.json")
 
     DATASET_NAME_RAW = train_set_name
