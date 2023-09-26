@@ -559,13 +559,14 @@ def main(cfg, eval_only=False, resume=False):
     test_set_name = cfg.DATASETS.TEST[0]
 
     if train_set_name == "rilv9" and test_set_name == "rilv9-test":
-        datasets.register_ril_dataset(
-            savedir_base="/mnt/colab_public/digitaltwin/generatorv9/gen9",
-            train_set_name=train_set_name,
-            test_set_name=test_set_name,
-        )
+        version = 9
     else:
         raise ValueError("Unknown dataset")
+
+    datasets.register_ril_dataset(
+        dataset_path="/mnt/colab_public/digitaltwin/generatorv9/gen9",
+        version=version
+    )
 
     if eval_only:
         model = Trainer.build_model(cfg)

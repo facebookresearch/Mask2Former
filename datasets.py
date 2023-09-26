@@ -3,22 +3,25 @@ import os.path
 
 from detectron2.data import DatasetCatalog, MetadataCatalog
 
-def register_ril_dataset(savedir_base, train_set_name, test_set_name):
+
+def register_ril_dataset(dataset_path, version):
     """
-    savedir_base should contain generatorv{version}, generatorv{version}_panoptic,
+    dataset_path should contain generatorv{version}, generatorv{version}_panoptic,
     and generatorv{version}_shapenetv1
 
     """
     ## FULL DS
-    PATH_IMAGES = os.path.expanduser(f"{savedir_base}/generatorv9")
-    PATH_IMAGES_SHAPENET = os.path.expanduser(f"{savedir_base}/generatorv9_shapenetv1")
-    PATH_PANOPT = os.path.expanduser(f"{savedir_base}/generatorv9_panoptic")
+    PATH_IMAGES = os.path.expanduser(f"{dataset_path}/generatorv{version}")
+    PATH_IMAGES_SHAPENET = os.path.expanduser(
+        f"{dataset_path}/generatorv{version}_shapenetv1"
+    )
+    PATH_PANOPT = os.path.expanduser(f"{dataset_path}/generatorv{version}_panoptic")
 
     DATA_JSON = os.path.join(PATH_PANOPT, "00000_dsinfo.json")
 
-    DATASET_NAME_RAW = train_set_name
+    DATASET_NAME_RAW = f"rilv{version}"
     DATASET_NAME_SHN = f"rilv-shapenetv1"
-    DATASET_NAME_TEST = test_set_name
+    DATASET_NAME_TEST = f"rilv-test{version}"
     TEST_SPLIT = 0.1  # 10 %
 
     data_json = json.load(open(DATA_JSON, "r"))
