@@ -557,7 +557,7 @@ def main(cfg, eval_only=False, resume=False):
     # get dataset
     train_set_name = cfg.DATASETS.TRAIN[0]
     test_set_name = cfg.DATASETS.TEST[0]
-    
+
     if train_set_name == "rilv9" and test_set_name == "rilv9-test":
         datasets.register_ril_dataset(
             savedir_base="/mnt/colab_public/digitaltwin/generatorv9/gen9",
@@ -566,7 +566,7 @@ def main(cfg, eval_only=False, resume=False):
         )
     else:
         raise ValueError("Unknown dataset")
-    
+
     if eval_only:
         model = Trainer.build_model(cfg)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
