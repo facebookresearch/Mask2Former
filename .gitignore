@@ -3,6 +3,7 @@ output
 instant_test_output
 inference_test_output
 
+other
 .havenignore
 *.png
 *.json
