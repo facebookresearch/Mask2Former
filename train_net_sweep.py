@@ -30,7 +30,11 @@ def main_sweep(exp_dict, savedir, args):
     cfg.OUTPUT_DIR = f"{savedir}"
     cfg.DATALOADER.NUM_WORKERS = 0
     # Call main with these arguments
-    train_net.main_launch(cfg, num_gpus=exp_dict["num_gpus"])
+    train_net.main_launch(
+        cfg,
+        num_gpus=exp_dict["num_gpus"],
+        dataset_path="/mnt/colab_public/digitaltwin/generatorv9/gen9",
+    )
 
     print("Experiment done\n")
 

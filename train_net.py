@@ -25,7 +25,7 @@ use_wandb = False
 #     warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 # except:
 #     pass
-
+import datasets
 import pickle
 import copy
 import itertools
@@ -548,25 +548,8 @@ def setup(args):
     return cfg
 
 
-import datasets
-
-import datasets
-
-
-def main(cfg, eval_only=False, resume=False):
-    # get dataset
-    train_set_name = cfg.DATASETS.TRAIN[0]
-    test_set_name = cfg.DATASETS.TEST[0]
-
-    if train_set_name == "rilv9" and test_set_name == "rilv9-test":
-        version = 9
-    else:
-        raise ValueError("Unknown dataset")
-
-    datasets.register_ril_dataset(
-        dataset_path="/mnt/colab_public/digitaltwin/generatorv9/gen9",
-        version=version
-    )
+def main(cfg, dataset_path, eval_only=False, resume=False):
+    datasets.register_ril_dataset(dataset_path=dataset_path)
 
     if eval_only:
         model = Trainer.build_model(cfg)
@@ -591,6 +574,7 @@ def main_launch(
     num_machines=1,
     machine_rank=0,
     dist_url="tcp://127.0.0.1:62163",
+    dataset_path=None,
 ):
     if cfg is None:
         cfg = setup(args)
@@ -600,12 +584,17 @@ def main_launch(
         num_machines=num_machines,
         machine_rank=machine_rank,
         dist_url=dist_url,
-        args=(cfg,),
+        args=(cfg, dataset_path),
     )
 
 
 if __name__ == "__main__":
-    args = default_argument_parser().parse_args()
+    args = default_argument_parser()
+    # add argument to args
+    args.add_argument("--dataset_path", type=str, default=None)
+
+    args = args.parse_args()
+
     print("Command Line Args:", args)
     main_launch(
         cfg=None,
@@ -613,4 +602,5 @@ if __name__ == "__main__":
         num_machines=args.num_machines,
         machine_rank=args.machine_rank,
         dist_url=args.dist_url,
+        dataset_path=args.dataset_path,
     )

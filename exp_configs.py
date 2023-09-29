@@ -52,58 +52,60 @@ def update_cfg(lr, batch_size, train_set, test_set, model):
 
 
 EXP_GROUPS["baselines_large_scale"] = []
-for lr in [0.00001, 0.0001, 0.01, 0.001]:
+for lr in [0.0001]:
     for batch_size in [4]:
-        for model in [None, "swin"]:
-            train_set = "rilv9"
-            test_set = "rilv9-test"
-            cfg_new = update_cfg(lr, batch_size, train_set, test_set, model=model)
-            path = (
-                f"configs/configs_pkl/{hu.hash_dict({'config_name': str(cfg_new)})}.pkl"
-            )
-            hu.save_pkl(path, cfg_new)
+        for run in [1, 2, 3]:
+            for model in [None, "swin"]:
+                train_set = "ril"
+                test_set = "ril-test"
+                cfg_new = update_cfg(lr, batch_size, train_set, test_set, model=model)
+                path = (
+                    f"configs/configs_pkl/{hu.hash_dict({'config_name': str(cfg_new)})}.pkl"
+                )
+                hu.save_pkl(path, cfg_new)
 
-            exp_list = hu.cartesian_exp_group(
-                {
-                    "model": model,
-                    "config_path": path,
-                    "train_set": train_set,
-                    "test_set": test_set,
-                    "lr": lr,
-                    "batch_size": batch_size,
-                    "num_gpus": 4,
-                },
-                remove_none=True,
-            )
-            EXP_GROUPS["baselines_large_scale"] += exp_list
+                exp_list = hu.cartesian_exp_group(
+                    {
+                        "model": model,
+                        "config_path": path,
+                        "train_set": train_set,
+                        "test_set": test_set,
+                        "lr": lr,
+                        "batch_size": batch_size,
+                        "num_gpus": 4,
+                        "run": run
+                    },
+                    remove_none=True,
+                )
+                EXP_GROUPS["baselines_large_scale"] += exp_list
 
 
 EXP_GROUPS["baselines_small_scale"] = []
 for lr in [0.0001]:
     for batch_size in [2]:
-        for model in [
-            None,
-            "swin",
-        ]:
-            train_set = "rilv9"
-            test_set = "rilv9-test"
-            cfg_new = update_cfg(lr, batch_size, train_set, test_set, model=model)
+        for run in [1, 2, 3]:
+            for model in [
+                None,
+                "swin",
+            ]:
+                train_set = "ril"
+                test_set = "ril-test"
+                cfg_new = update_cfg(lr, batch_size, train_set, test_set, model=model)
 
-            path = (
-                f"configs/configs_pkl/{hu.hash_dict({'config_name': str(cfg_new)})}.pkl"
-            )
-            hu.save_pkl(path, cfg_new)
+                path = f"configs/configs_pkl/{hu.hash_dict({'config_name': str(cfg_new)})}.pkl"
+                hu.save_pkl(path, cfg_new)
 
-            exp_list = hu.cartesian_exp_group(
-                {
-                    "model": model,
-                    "config_path": path,
-                    "train_set": train_set,
-                    "test_set": test_set,
-                    "lr": lr,
-                    "batch_size": batch_size,
-                    "num_gpus": 1,
-                },
-                remove_none=True,
-            )
-            EXP_GROUPS["baselines_small_scale"] += exp_list
+                exp_list = hu.cartesian_exp_group(
+                    {
+                        "model": model,
+                        "config_path": path,
+                        "train_set": train_set,
+                        "test_set": test_set,
+                        "lr": lr,
+                        "batch_size": batch_size,
+                        "num_gpus": 1,
+                        "run": run,
+                    },
+                    remove_none=True,
+                )
+                EXP_GROUPS["baselines_small_scale"] += exp_list
