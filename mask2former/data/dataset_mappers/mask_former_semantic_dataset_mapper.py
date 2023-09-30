@@ -4,6 +4,7 @@ import logging
 
 import numpy as np
 import torch
+from PIL import Image
 from torch.nn import functional as F
 
 from detectron2.config import configurable
@@ -14,6 +15,8 @@ from detectron2.projects.point_rend import ColorAugSSDTransform
 from detectron2.structures import BitMasks, Instances
 
 __all__ = ["MaskFormerSemanticDatasetMapper"]
+
+from mask2former.data.augmentations import RandomPatches
 
 
 class MaskFormerSemanticDatasetMapper:
@@ -80,9 +83,12 @@ class MaskFormerSemanticDatasetMapper:
         if cfg.INPUT.COLOR_AUG_SSD:
             augs.append(ColorAugSSDTransform(img_format=cfg.INPUT.FORMAT))
         augs.append(T.RandomFlip())
+        if cfg.INPUT.PATCHES.ENABLED:
+            augs.append(RandomPatches())
 
         # Assume always applies to the training set.
         dataset_names = cfg.DATASETS.TRAIN
+        assert dataset_names[0] in MetadataCatalog, "You forgot to register this dataset!"
         meta = MetadataCatalog.get(dataset_names[0])
         ignore_label = meta.ignore_label
 
@@ -174,9 +180,7 @@ class MaskFormerSemanticDatasetMapper:
                 # Some image does not have annotation (all ignored)
                 instances.gt_masks = torch.zeros((0, sem_seg_gt.shape[-2], sem_seg_gt.shape[-1]))
             else:
-                masks = BitMasks(
-                    torch.stack([torch.from_numpy(np.ascontiguousarray(x.copy())) for x in masks])
-                )
+                masks = BitMasks(torch.stack([torch.from_numpy(np.ascontiguousarray(x.copy())) for x in masks]))
                 instances.gt_masks = masks.tensor
 
             dataset_dict["instances"] = instances

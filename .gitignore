@@ -3,7 +3,8 @@ output
 instant_test_output
 inference_test_output
 
-
+other
+.havenignore
 *.png
 *.json
 *.diff
@@ -51,3 +52,6 @@ _darcs
 /projects/*/datasets
 /models
 /snippet
+wandb
+.DS_Store
+test.log

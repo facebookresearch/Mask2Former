@@ -4,6 +4,7 @@ import logging
 
 import numpy as np
 import torch
+from PIL import Image
 from torch.nn import functional as F
 
 from detectron2.config import configurable
@@ -95,6 +96,13 @@ class MaskFormerPanopticDatasetMapper(MaskFormerSemanticDatasetMapper):
         aug_input = T.AugInput(image, sem_seg=sem_seg_gt)
         aug_input, transforms = T.apply_transform_gens(self.tfm_gens, aug_input)
         image = aug_input.image
+
+        # print(type(image), image.shape)
+        # tmp = Image.fromarray(image)
+        # print(dataset_dict)
+        # tmp.save(f"{dataset_dict['image_id']}-transformed.jpeg")
+        # quit()
+
         if sem_seg_gt is not None:
             sem_seg_gt = aug_input.sem_seg
 
@@ -122,9 +130,7 @@ class MaskFormerPanopticDatasetMapper(MaskFormerSemanticDatasetMapper):
             image = F.pad(image, padding_size, value=128).contiguous()
             if sem_seg_gt is not None:
                 sem_seg_gt = F.pad(sem_seg_gt, padding_size, value=self.ignore_label).contiguous()
-            pan_seg_gt = F.pad(
-                pan_seg_gt, padding_size, value=0
-            ).contiguous()  # 0 is the VOID panoptic label
+            pan_seg_gt = F.pad(pan_seg_gt, padding_size, value=0).contiguous()  # 0 is the VOID panoptic label
 
         image_shape = (image.shape[-2], image.shape[-1])  # h, w
 
@@ -151,15 +157,16 @@ class MaskFormerPanopticDatasetMapper(MaskFormerSemanticDatasetMapper):
 
         classes = np.array(classes)
         instances.gt_classes = torch.tensor(classes, dtype=torch.int64)
+
         if len(masks) == 0:
             # Some image does not have annotation (all ignored)
             instances.gt_masks = torch.zeros((0, pan_seg_gt.shape[-2], pan_seg_gt.shape[-1]))
         else:
-            masks = BitMasks(
-                torch.stack([torch.from_numpy(np.ascontiguousarray(x.copy())) for x in masks])
-            )
+            masks = BitMasks(torch.stack([torch.from_numpy(np.ascontiguousarray(x.copy())) for x in masks]))
             instances.gt_masks = masks.tensor
 
         dataset_dict["instances"] = instances
+
+        # print("dataset dict", dataset_dict.keys())
 
         return dataset_dict

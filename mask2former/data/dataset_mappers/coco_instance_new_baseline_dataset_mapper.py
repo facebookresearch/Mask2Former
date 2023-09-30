@@ -9,8 +9,6 @@ import torch
 from detectron2.config import configurable
 from detectron2.data import detection_utils as utils
 from detectron2.data import transforms as T
-from detectron2.data.transforms import TransformGen
-from detectron2.structures import BitMasks, Instances
 
 from pycocotools import mask as coco_mask
 
@@ -56,12 +54,17 @@ def build_transform_gen(cfg, is_train):
             )
         )
 
-    augmentation.extend([
-        T.ResizeScale(
-            min_scale=min_scale, max_scale=max_scale, target_height=image_size, target_width=image_size
-        ),
-        T.FixedSizeCrop(crop_size=(image_size, image_size)),
-    ])
+    augmentation.extend(
+        [
+            T.ResizeScale(
+                min_scale=min_scale,
+                max_scale=max_scale,
+                target_height=image_size,
+                target_width=image_size,
+            ),
+            T.FixedSizeCrop(crop_size=(image_size, image_size)),
+        ]
+    )
 
     return augmentation
 
@@ -100,12 +103,14 @@ class COCOInstanceNewBaselineDatasetMapper:
         """
         self.tfm_gens = tfm_gens
         logging.getLogger(__name__).info(
-            "[COCOInstanceNewBaselineDatasetMapper] Full TransformGens used in training: {}".format(str(self.tfm_gens))
+            "[COCOInstanceNewBaselineDatasetMapper] Full TransformGens used in training: {}".format(
+                str(self.tfm_gens)
+            )
         )
 
         self.img_format = image_format
         self.is_train = is_train
-    
+
     @classmethod
     def from_config(cls, cfg, is_train=True):
         # Build augmentation
@@ -137,15 +142,19 @@ class COCOInstanceNewBaselineDatasetMapper:
         image, transforms = T.apply_transform_gens(self.tfm_gens, image)
         # the crop transformation has default padding value 0 for segmentation
         padding_mask = transforms.apply_segmentation(padding_mask)
-        padding_mask = ~ padding_mask.astype(bool)
+        padding_mask = ~padding_mask.astype(bool)
 
         image_shape = image.shape[:2]  # h, w
 
         # Pytorch's dataloader is efficient on torch.Tensor due to shared-memory,
         # but not efficient on large generic data structures due to the use of pickle & mp.Queue.
         # Therefore it's important to use torch.Tensor.
-        dataset_dict["image"] = torch.as_tensor(np.ascontiguousarray(image.transpose(2, 0, 1)))
-        dataset_dict["padding_mask"] = torch.as_tensor(np.ascontiguousarray(padding_mask))
+        dataset_dict["image"] = torch.as_tensor(
+            np.ascontiguousarray(image.transpose(2, 0, 1))
+        )
+        dataset_dict["padding_mask"] = torch.as_tensor(
+            np.ascontiguousarray(padding_mask)
+        )
 
         if not self.is_train:
             # USER: Modify this if you want to keep them for some reason.
@@ -180,7 +189,7 @@ class COCOInstanceNewBaselineDatasetMapper:
             # Generate masks from polygon
             h, w = instances.image_size
             # image_size_xyxy = torch.as_tensor([w, h, w, h], dtype=torch.float)
-            if hasattr(instances, 'gt_masks'):
+            if hasattr(instances, "gt_masks"):
                 gt_masks = instances.gt_masks
                 gt_masks = convert_coco_poly_to_mask(gt_masks.polygons, h, w)
                 instances.gt_masks = gt_masks

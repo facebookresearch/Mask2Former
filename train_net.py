@@ -4,22 +4,37 @@ MaskFormer Training Script.
 
 This script is a simplified version of the training script in detectron2/tools.
 """
-try:
-    # ignore ShapelyDeprecationWarning from fvcore
-    from shapely.errors import ShapelyDeprecationWarning
-    import warnings
-    warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
-except:
-    pass
+import time, shutil, json
 
+# try:
+#     from detectron2.utils.events import WandbWriter
+#     from detectron2.evaluation import WandbVisualizer
+
+#     use_wandb = True
+# except Exception as e:
+#     print(e)
+#     print("== WARNING: not using WANDB for logging")
+
+#     use_wandb = False
+use_wandb = False
+# try:
+#     # ignore ShapelyDeprecationWarning from fvcore
+#     from shapely.errors import ShapelyDeprecationWarning
+#     import warnings
+
+#     warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
+# except:
+#     pass
+import datasets
+import pickle
 import copy
 import itertools
 import logging
 import os
-
+import weakref
 from collections import OrderedDict
 from typing import Any, Dict, List, Set
-
+from detectron2.engine import hooks
 import torch
 
 import detectron2.utils.comm as comm
@@ -31,6 +46,12 @@ from detectron2.engine import (
     default_argument_parser,
     default_setup,
     launch,
+)
+from detectron2.evaluation import (
+    DatasetEvaluator,
+    inference_on_dataset,
+    print_csv_format,
+    verify_results,
 )
 from detectron2.evaluation import (
     CityscapesInstanceEvaluator,
@@ -46,23 +67,76 @@ from detectron2.projects.deeplab import add_deeplab_config, build_lr_scheduler
 from detectron2.solver.build import maybe_add_gradient_clipping
 from detectron2.utils.logger import setup_logger
 
+
 # MaskFormer
-from mask2former import (
-    COCOInstanceNewBaselineDatasetMapper,
-    COCOPanopticNewBaselineDatasetMapper,
-    InstanceSegEvaluator,
-    MaskFormerInstanceDatasetMapper,
-    MaskFormerPanopticDatasetMapper,
-    MaskFormerSemanticDatasetMapper,
-    SemanticSegmentorWithTTA,
-    add_maskformer2_config,
-)
+from mask2former import COCOInstanceNewBaselineDatasetMapper
+from mask2former import COCOPanopticNewBaselineDatasetMapper
+from mask2former import InstanceSegEvaluator
+from mask2former import MaskFormerInstanceDatasetMapper
+from mask2former import MaskFormerPanopticDatasetMapper
+from mask2former import MaskFormerSemanticDatasetMapper
+from mask2former import SemanticSegmentorWithTTA
+from mask2former import add_maskformer2_config
+from detectron2.engine.defaults import create_ddp_model
+from detectron2.engine.train_loop import AMPTrainer, SimpleTrainer
 
 
 class Trainer(DefaultTrainer):
     """
     Extension of the Trainer class adapted to MaskFormer.
     """
+
+    # def __init__(self, cfg):
+    #     """
+    #     Args:
+    #         cfg (CfgNode):
+    #     """
+    #     super().__init__()
+    #     logger = logging.getLogger("detectron2")
+    #     if not logger.isEnabledFor(logging.INFO):  # setup_logger is not called for d2
+    #         setup_logger()
+    #     cfg = DefaultTrainer.auto_scale_workers(cfg, comm.get_world_size())
+
+    #     # Assume these objects must be constructed in this order.
+    #     model = self.build_model(cfg)
+    #     optimizer = self.build_optimizer(cfg, model)
+    #     data_loader = self.build_train_loader(cfg)
+
+    #     model = create_ddp_model(model, broadcast_buffers=False)
+    #     self._trainer = (AMPTrainer if cfg.SOLVER.AMP.ENABLED else SimpleTrainer)(
+    #         model, data_loader, optimizer
+    #     )
+
+    #     self.scheduler = self.build_lr_scheduler(cfg, optimizer)
+    #     self.checkpointer = DetectionCheckpointer(
+    #         # Assume you want to save checkpoints together with logs/statistics
+    #         model,
+    #         cfg.OUTPUT_DIR,
+    #         trainer=weakref.proxy(self),
+    #     )
+    #     self.start_iter = 0
+    #     self.max_iter = cfg.SOLVER.MAX_ITER
+    #     self.cfg = cfg
+
+    #     self.register_hooks(self.build_hooks())
+
+    def after_step(self):
+        for h in self._hooks:
+            h.after_step()
+
+        if self.iter > 0 and self.iter % 50 == 0:
+            # load json where each line is a dict
+            path = os.path.join(self.cfg.OUTPUT_DIR, "metrics.json")
+            assert os.path.exists(path)
+            with open(path, "r") as f:
+                lines = f.readlines()
+                score_list = [json.loads(line) for line in lines]
+
+            # save as pkl in score_list.pkl - haven can read this
+            path = os.path.join(self.cfg.OUTPUT_DIR, "score_list.pkl")
+            with open(path, "wb") as f:
+                pickle.dump(score_list, f)
+            print(f"Saved: {self.cfg.OUTPUT_DIR}")
 
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
@@ -76,6 +150,7 @@ class Trainer(DefaultTrainer):
         if output_folder is None:
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
         evaluator_list = []
+
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
         # semantic segmentation
         if evaluator_type in ["sem_seg", "ade20k_panoptic_seg"]:
@@ -95,19 +170,44 @@ class Trainer(DefaultTrainer):
             "ade20k_panoptic_seg",
             "cityscapes_panoptic_seg",
             "mapillary_vistas_panoptic_seg",
+            "ril_panoptic",
         ]:
             if cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON:
-                evaluator_list.append(COCOPanopticEvaluator(dataset_name, output_folder))
+                evaluator_list.append(
+                    COCOPanopticEvaluator(dataset_name, output_folder)
+                )
         # COCO
-        if evaluator_type == "coco_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON:
+        if (
+            evaluator_type == "coco_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON
+        ):
             evaluator_list.append(COCOEvaluator(dataset_name, output_dir=output_folder))
-        if evaluator_type == "coco_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON:
-            evaluator_list.append(SemSegEvaluator(dataset_name, distributed=True, output_dir=output_folder))
+        if (
+            evaluator_type == "coco_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON
+        ):
+            evaluator_list.append(
+                SemSegEvaluator(
+                    dataset_name, distributed=True, output_dir=output_folder
+                )
+            )
         # Mapillary Vistas
-        if evaluator_type == "mapillary_vistas_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON:
-            evaluator_list.append(InstanceSegEvaluator(dataset_name, output_dir=output_folder))
-        if evaluator_type == "mapillary_vistas_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON:
-            evaluator_list.append(SemSegEvaluator(dataset_name, distributed=True, output_dir=output_folder))
+        if (
+            evaluator_type == "mapillary_vistas_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON
+        ):
+            evaluator_list.append(
+                InstanceSegEvaluator(dataset_name, output_dir=output_folder)
+            )
+        if (
+            evaluator_type == "mapillary_vistas_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.SEMANTIC_ON
+        ):
+            evaluator_list.append(
+                SemSegEvaluator(
+                    dataset_name, distributed=True, output_dir=output_folder
+                )
+            )
         # Cityscapes
         if evaluator_type == "cityscapes_instance":
             assert (
@@ -131,8 +231,13 @@ class Trainer(DefaultTrainer):
                 ), "CityscapesEvaluator currently do not work with multiple machines."
                 evaluator_list.append(CityscapesInstanceEvaluator(dataset_name))
         # ADE20K
-        if evaluator_type == "ade20k_panoptic_seg" and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON:
-            evaluator_list.append(InstanceSegEvaluator(dataset_name, output_dir=output_folder))
+        if (
+            evaluator_type == "ade20k_panoptic_seg"
+            and cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON
+        ):
+            evaluator_list.append(
+                InstanceSegEvaluator(dataset_name, output_dir=output_folder)
+            )
         # LVIS
         if evaluator_type == "lvis":
             return LVISEvaluator(dataset_name, output_dir=output_folder)
@@ -145,6 +250,148 @@ class Trainer(DefaultTrainer):
         elif len(evaluator_list) == 1:
             return evaluator_list[0]
         return DatasetEvaluators(evaluator_list)
+
+    def run_step(self):
+        self._trainer.iter = self.iter
+        self._trainer.run_step()
+
+    @classmethod
+    def test(cls, cfg, model, evaluators=None):
+        """
+        Evaluate the given model. The given model is expected to already contain
+        weights to evaluate.
+
+        Args:
+            cfg (CfgNode):
+            model (nn.Module):
+            evaluators (list[DatasetEvaluator] or None): if None, will call
+                :meth:`build_evaluator`. Otherwise, must have the same length as
+                ``cfg.DATASETS.TEST``.
+
+        Returns:
+            dict: a dict of result metrics
+        """
+        logger = logging.getLogger(__name__)
+        if isinstance(evaluators, DatasetEvaluator):
+            evaluators = [evaluators]
+        if evaluators is not None:
+            assert len(cfg.DATASETS.TEST) == len(evaluators), "{} != {}".format(
+                len(cfg.DATASETS.TEST), len(evaluators)
+            )
+
+        results = OrderedDict()
+        for idx, dataset_name in enumerate(cfg.DATASETS.TEST):
+            data_loader = cls.build_test_loader(cfg, dataset_name)
+            # When evaluators are passed in as arguments,
+            # implicitly assume that evaluators can be created before data_loader.
+            if evaluators is not None:
+                evaluator = evaluators[idx]
+            else:
+                try:
+                    evaluator = cls.build_evaluator(cfg, dataset_name)
+                except NotImplementedError:
+                    logger.warn(
+                        "No evaluator found. Use `DefaultTrainer.test(evaluators=)`, "
+                        "or implement its `build_evaluator` method."
+                    )
+                    results[dataset_name] = {}
+                    continue
+            results_i = inference_on_dataset(model, data_loader, evaluator)
+            results[dataset_name] = results_i
+            if comm.is_main_process():
+                assert isinstance(
+                    results_i, dict
+                ), "Evaluator must return a dict on the main process. Got {} instead.".format(
+                    results_i
+                )
+                logger.info(
+                    "Evaluation results for {} in csv format:".format(dataset_name)
+                )
+                print_csv_format(results_i)
+
+        if len(results) == 1:
+            results = list(results.values())[0]
+        return results
+
+    def build_hooks(self):
+        """
+        Build a list of default hooks, including timing, evaluation,
+        checkpointing, lr scheduling, precise BN, writing events.
+
+        Returns:
+            list[HookBase]:
+        """
+        cfg = self.cfg.clone()
+        cfg.defrost()
+        cfg.DATALOADER.NUM_WORKERS = 0  # save some memory and time for PreciseBN
+
+        ret = [
+            hooks.IterationTimer(),
+            hooks.LRScheduler(),
+            hooks.PreciseBN(
+                # Run at the same freq as (but before) evaluation.
+                cfg.TEST.EVAL_PERIOD,
+                self.model,
+                # Build a new data loader to not affect training
+                self.build_train_loader(cfg),
+                cfg.TEST.PRECISE_BN.NUM_ITER,
+            )
+            if cfg.TEST.PRECISE_BN.ENABLED and get_bn_modules(self.model)
+            else None,
+        ]
+
+        # Do PreciseBN before checkpointer, because it updates the model and need to
+        # be saved by checkpointer.
+        # This is not always the best: if checkpointing has a different frequency,
+        # some checkpoints may have more precise statistics than others.
+        if comm.is_main_process():
+            ret.append(
+                hooks.PeriodicCheckpointer(
+                    self.checkpointer, cfg.SOLVER.CHECKPOINT_PERIOD
+                )
+            )
+
+        def test_and_save_results():
+            self._last_eval_results = self.test(self.cfg, self.model)
+            if comm.is_main_process():
+                import json
+                import pandas as pd
+
+                # Save Best Model
+                fname = os.path.join(self.cfg.OUTPUT_DIR, "metrics.json")
+                # read a text file fname and convert each line to a dict and aggregate to a list
+                with open(fname) as f:
+                    lines = f.readlines()
+                score_list = [json.loads(line) for line in lines]
+
+                score_df = pd.DataFrame(score_list)
+
+                # Compare PQ scores
+                if (
+                    "panoptic_seg/PQ" not in score_df.columns
+                    or score_df["panoptic_seg/PQ"].max()
+                    < self._last_eval_results["panoptic_seg"]["PQ"]
+                ):
+                    # Save best model
+                    self.checkpointer.save("model_best")
+
+                    # Save metrics in metrics_best.json
+                    with open(fname.replace(".json", "_best.json"), "a") as f:
+                        f.write(
+                            json.dumps(self._last_eval_results["panoptic_seg"]) + "\n"
+                        )
+
+            return self._last_eval_results
+
+        # Do evaluation after checkpointer, because then if it fails,
+        # we can use the saved checkpoint to debug.
+        ret.append(hooks.EvalHook(cfg.TEST.EVAL_PERIOD, test_and_save_results))
+
+        if comm.is_main_process():
+            # Here the default print/log frequency of each writer is used.
+            # run writers in the end, so that evaluation metrics are written
+            ret.append(hooks.PeriodicWriter(self.build_writers(), period=20))
+        return ret
 
     @classmethod
     def build_train_loader(cls, cfg):
@@ -216,7 +463,9 @@ class Trainer(DefaultTrainer):
 
                 hyperparams = copy.copy(defaults)
                 if "backbone" in module_name:
-                    hyperparams["lr"] = hyperparams["lr"] * cfg.SOLVER.BACKBONE_MULTIPLIER
+                    hyperparams["lr"] = (
+                        hyperparams["lr"] * cfg.SOLVER.BACKBONE_MULTIPLIER
+                    )
                 if (
                     "relative_position_bias_table" in module_param_name
                     or "absolute_pos_embed" in module_param_name
@@ -240,7 +489,9 @@ class Trainer(DefaultTrainer):
 
             class FullModelGradientClippingOptimizer(optim):
                 def step(self, closure=None):
-                    all_params = itertools.chain(*[x["params"] for x in self.param_groups])
+                    all_params = itertools.chain(
+                        *[x["params"] for x in self.param_groups]
+                    )
                     torch.nn.utils.clip_grad_norm_(all_params, clip_norm_val)
                     super().step(closure=closure)
 
@@ -291,17 +542,19 @@ def setup(args):
     cfg.freeze()
     default_setup(cfg, args)
     # Setup logger for "mask_former" module
-    setup_logger(output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="mask2former")
+    setup_logger(
+        output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="mask2former"
+    )
     return cfg
 
 
-def main(args):
-    cfg = setup(args)
+def main(cfg, dataset_path, eval_only=False, resume=False):
+    datasets.register_ril_dataset(dataset_path=dataset_path)
 
-    if args.eval_only:
+    if eval_only:
         model = Trainer.build_model(cfg)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
-            cfg.MODEL.WEIGHTS, resume=args.resume
+            cfg.MODEL.WEIGHTS, resume=resume
         )
         res = Trainer.test(cfg, model)
         if cfg.TEST.AUG.ENABLED:
@@ -311,18 +564,43 @@ def main(args):
         return res
 
     trainer = Trainer(cfg)
-    trainer.resume_or_load(resume=args.resume)
+    trainer.resume_or_load(resume=resume)
     return trainer.train()
 
 
-if __name__ == "__main__":
-    args = default_argument_parser().parse_args()
-    print("Command Line Args:", args)
+def main_launch(
+    cfg=None,
+    num_gpus=1,
+    num_machines=1,
+    machine_rank=0,
+    dist_url="tcp://127.0.0.1:62163",
+    dataset_path=None,
+):
+    if cfg is None:
+        cfg = setup(args)
     launch(
         main,
-        args.num_gpus,
+        num_gpus,
+        num_machines=num_machines,
+        machine_rank=machine_rank,
+        dist_url=dist_url,
+        args=(cfg, dataset_path),
+    )
+
+
+if __name__ == "__main__":
+    args = default_argument_parser()
+    # add argument to args
+    args.add_argument("--dataset_path", type=str, default=None)
+
+    args = args.parse_args()
+
+    print("Command Line Args:", args)
+    main_launch(
+        cfg=None,
+        num_gpus=args.num_gpus,
         num_machines=args.num_machines,
         machine_rank=args.machine_rank,
         dist_url=args.dist_url,
-        args=(args,),
+        dataset_path=args.dataset_path,
     )
