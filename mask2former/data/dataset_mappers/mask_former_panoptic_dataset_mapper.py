@@ -145,7 +145,7 @@ class MaskFormerPanopticDatasetMapper(MaskFormerSemanticDatasetMapper):
         masks = []
         for segment_info in segments_info:
             class_id = segment_info["category_id"]
-            if not segment_info["iscrowd"]:
+            if not segment_info.get("iscrowd", 0):
                 classes.append(class_id)
                 masks.append(pan_seg_gt == segment_info["id"])
 
