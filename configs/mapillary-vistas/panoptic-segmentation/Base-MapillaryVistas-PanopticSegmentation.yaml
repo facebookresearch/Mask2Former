@@ -17,9 +17,9 @@ DATASETS:
   TRAIN: ("mapillary_vistas_panoptic_train",)
   TEST: ("mapillary_vistas_panoptic_val",)
 SOLVER:
-  IMS_PER_BATCH: 16
+  IMS_PER_BATCH: 1
   BASE_LR: 0.0001
-  MAX_ITER: 300000
+  MAX_ITER: 4000
   WARMUP_FACTOR: 1.0
   WARMUP_ITERS: 0
   WEIGHT_DECAY: 0.05
